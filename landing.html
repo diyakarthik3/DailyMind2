@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyMind — Welcome</title>
+    <style>
+        :root {
+            /* Cool-toned, neutral gradient background */
+            --bg-gradient: linear-gradient(135deg, #7b8cc4 0%, #a4b3d6 35%, #c5d1e8 70%, #e2e8f0 100%);
+
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.65);
+            --glass-shadow: 0 16px 40px 0 rgba(30, 41, 59, 0.12);
+            
+            --text-main: #0f172a;
+            --text-sub: #334155;
+            --primary-accent: #3b5284;
+            --primary-accent-hover: #2d3f66;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+       body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: var(--text-main);
+            overflow: hidden;
+            position: relative;
+        }
+
+/* Desktop Container (Fixed Dead-Center) */
+        .desktop-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 520px;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Ensure main card takes full container width */
+        .glass-card {
+            width: 100%;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: var(--glass-border);
+            border-radius: 32px;
+            box-shadow: var(--glass-shadow);
+            padding: 48px 40px;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--text-main);
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        p {
+            color: var(--text-sub);
+            font-size: 18px;
+            line-height: 1.5;
+            margin-bottom: 36px;
+        }
+
+        .feature-box {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 40px;
+            text-align: left;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.35);
+            padding: 14px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: var(--text-main);
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .feature-item span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-accent);
+        }
+
+        .btn-start {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: var(--primary-accent);
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 700;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(45, 63, 102, 0.25);
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-start:hover {
+            background: var(--primary-accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(45, 63, 102, 0.35);
+        }
+
+        .btn-start:active {
+            transform: translateY(0);
+        }
+
+        /* --- LARGER FLOATING BACKGROUND CARDS --- */
+       .bg-card-field {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card-float {
+            position: absolute;
+            width: 340px; /* Expanded width */
+            padding: 22px 24px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.38);
+            border: 1px solid rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08);
+            opacity: 0;
+            display: flex;
+            gap: 18px;
+            align-items: center;
+        }
+
+        /* Black and White Clipart Image Styling */
+        /* Black and White Clipart Image Styling */
+       /* Black and White Clipart Image Styling */
+     /* Black and White Clipart Image Styling */
+        .card-illustration {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            flex-shrink: 0;
+            
+            /* Removes white backgrounds from PNGs/JPGs */
+            mix-blend-mode: multiply; 
+            
+            /* Prevents broken alt text from showing through */
+            color: transparent;
+            font-size: 0;
+        }
+        .card-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .card-time {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary-accent);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.35;
+        }
+
+        .card-tag {
+            align-self: flex-start;
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.55);
+            color: var(--text-sub);
+        }
+
+        /* Position & Floating Animations */
+        .card-tl {
+            top: 6%;
+            left: 3%;
+            transform: rotate(-8deg);
+            animation: popAndDriftTL 10s ease-in-out infinite alternate 0.2s;
+        }
+
+        .card-tr {
+            top: 8%;
+            right: 3%;
+            transform: rotate(6deg);
+            animation: popAndDriftTR 12s ease-in-out infinite alternate 0.5s;
+        }
+
+        .card-bl {
+            bottom: 6%;
+            left: 4%;
+            transform: rotate(5deg);
+            animation: popAndDriftBL 11s ease-in-out infinite alternate 0.8s;
+        }
+
+        .card-br {
+            bottom: 6%;
+            right: 3%;
+            transform: rotate(-6deg);
+            animation: popAndDriftBR 9s ease-in-out infinite alternate 0.3s;
+        }
+
+        @keyframes popAndDriftTL {
+            0% { opacity: 0; transform: rotate(-8deg) scale(0.8) translateY(30px); }
+            20% { opacity: 0.85; transform: rotate(-8deg) scale(1) translateY(0); }
+            100% { opacity: 0.85; transform: rotate(-4deg) scale(1.02) translateY(-25px) translateX(15px); }
+        }
+
+        @keyframes popAndDriftTR {
+            0% { opacity: 0; transform: rotate(6deg) scale(0.8) translateY(30px); }
+            20% { opacity: 0.85; transform: rotate(6deg) scale(1) translateY(0); }
+            100% { opacity: 0.85; transform: rotate(9deg) scale(1.02) translateY(-20px) translateX(-18px); }
+        }
+
+        @keyframes popAndDriftBL {
+            0% { opacity: 0; transform: rotate(5deg) scale(0.8) translateY(30px); }
+            20% { opacity: 0.85; transform: rotate(5deg) scale(1) translateY(0); }
+            100% { opacity: 0.85; transform: rotate(2deg) scale(1.02) translateY(-22px) translateX(12px); }
+        }
+
+        @keyframes popAndDriftBR {
+            0% { opacity: 0; transform: rotate(-6deg) scale(0.8) translateY(30px); }
+            20% { opacity: 0.85; transform: rotate(-6deg) scale(1) translateY(0); }
+            100% { opacity: 0.85; transform: rotate(-10deg) scale(1.02) translateY(-28px) translateX(-14px); }
+        }
+
+        @media (max-width: 1024px) {
+            .bg-card-field {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-card-field">
+        <div class="card-float card-tl">
+            <img class="card-illustration" src="/images/yoga.png" alt="">
+            <div class="card-content">
+                <div class="card-time">8:00 AM • Morning</div>
+                <div class="card-title">Daily Breathwork & Yoga Stretch</div>
+                <div class="card-tag">Mindfulness</div>
+            </div>
+        </div>
+
+        <div class="card-float card-tr">
+            <img class="card-illustration" src="/images/meditation.png" alt="">
+            <div class="card-content">
+                <div class="card-time">12:30 PM • Afternoon</div>
+                <div class="card-title">Mindfulness Breathing</div>
+                <div class="card-tag">Rest & Reset</div>
+            </div>
+        </div>
+
+        <div class="card-float card-bl">
+            <img class="card-illustration" src="/images/family.png" alt="">
+            <div class="card-content">
+                <div class="card-time">5:00 PM • Evening</div>
+                <div class="card-title">Family Walk & Outdoor Time</div>
+                <div class="card-tag">Physical</div>
+            </div>
+        </div>
+
+        <div class="card-float card-br">
+            <img class="card-illustration" src="/images/journal.png" alt="">
+            <div class="card-content">
+                <div class="card-time">9:00 PM • Night</div>
+                <div class="card-title">Reflection & Gratitude Journaling</div>
+                <div class="card-tag">Wellness</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="desktop-container">
+        <div class="glass-card">
+            <h1>Welcome to DailyMind</h1>
+            <p>Better days begin with a better mind.</p>
+            <div class="feature-box">
+                <div class="feature-item"><span></span> Personalized Routines</div>
+                <div class="feature-item"><span></span> AI Voice Companion</div>
+                <div class="feature-item"><span></span> Progress Tracking</div>
+            </div>
+
+            <button class="btn-start" onclick="startApp()">Get Started</button>
+        </div>
+    </div>
+
+    <script>
+       function startApp() {
+    fetch('/api/navigate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: 'Onboarding' })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data && data.success) {
+            window.location.href = '/';
+        }
+    })
+    .catch(err => console.error("Navigation error:", err));
+}
+    </script>
+</body>
+</html>

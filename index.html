@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyMind — Web Platform Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .input-with-speech {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .input-with-speech textarea {
+            width: 100%;
+            padding-right: 52px;
+        }
+
+        .btn-mic {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: rgba(255, 255, 255, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+        }
+
+        .btn-mic:hover {
+            background: rgba(255, 255, 255, 0.75);
+            transform: scale(1.05);
+        }
+
+        .btn-mic.recording, .btn-nav-back.mic-active {
+            background: rgba(239, 68, 68, 0.25) !important;
+            border-color: rgba(239, 68, 68, 0.6) !important;
+            animation: mic-pulse 1.5s infinite;
+        }
+
+        @keyframes mic-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        :root {
+    /* Theme & Accent Variables */
+    --bg-gradient: linear-gradient(135deg, #7b8cc4 0%, #a4b3d6 35%, #c5d1e8 70%, #e2e8f0 100%);
+    --glass-bg: rgba(255, 255, 255, 0.45);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.65);
+    --glass-shadow: 0 16px 40px 0 rgba(30, 41, 59, 0.12);
+    
+    --text-main: #0f172a;
+    --text-sub: #334155;
+    --primary-accent: #3b5284;
+    --accent-text: #ffffff;
+    --card-inner-bg: rgba(255, 255, 255, 0.4);
+    --input-bg: rgba(255, 255, 255, 0.6);
+    --input-border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] {
+    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    --glass-bg: rgba(30, 41, 59, 0.6);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.12);
+    --glass-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.4);
+    
+    --text-main: #f8fafc;
+    --text-sub: #cbd5e1;
+    --card-inner-bg: rgba(255, 255, 255, 0.08);
+    --input-bg: rgba(15, 23, 42, 0.5);
+    --input-border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Custom Controls in Navigation Header */
+.custom-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.theme-toggle-btn, .color-picker-box {
+    background: var(--card-inner-bg);
+    border: var(--glass-border);
+    padding: 8px 12px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.color-picker-box input[type="color"] {
+    -webkit-appearance: none;
+    border: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    background: transparent;
+}
+
+.color-picker-box input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-picker-box input[type="color"]::-webkit-color-swatch {
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+}
+
+/* Voice Input Styles */
+.input-with-speech {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.btn-mic {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    background: var(--card-inner-bg);
+    border: var(--glass-border);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--text-main);
+    transition: transform 0.2s;
+}
+
+.btn-mic.listening {
+    background: #ef4444;
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 32px 20px;
+            font-size: 19px;
+            line-height: 1.6;
+        }
+
+        .web-container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            position: relative;
+            padding-bottom: 40px;
+        }
+
+        /* UPDATE THESE TWO CSS BLOCKS */
+.glass-card {
+    background: var(--glass-card-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 28px; /* Smooth rounded corners for Questionnaire & Cards */
+    padding: 36px;
+    margin-bottom: 24px;
+}
+
+        .big-title {
+            font-size: 34px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            line-height: 1.2;
+            letter-spacing: -0.3px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 20px;
+            margin-bottom: 28px;
+            font-weight: 500;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        input[type="text"], textarea, select {
+    width: 100%;
+    min-height: var(--touch-target-min);
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(255, 255, 255, 0.85);
+    border-radius: 20px; /* Rounded input borders */
+    font-size: 18px;
+    color: var(--text-primary);
+    outline: none;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary-slate);
+            background: rgba(255, 255, 255, 0.88);
+            box-shadow: 0 0 0 4px rgba(59, 82, 132, 0.2);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            min-height: var(--touch-target-min);
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: var(--border-radius-btn);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 18px;
+            transition: background 0.2s;
+        }
+
+        .checkbox-label:hover {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            margin-right: 14px;
+            accent-color: var(--primary-slate);
+            cursor: pointer;
+        }
+
+/* Update .btn-submit inside <style> */
+.btn-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 64px;
+    background: var(--primary-slate);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 28px; /* Smooth rounded corners matching the cards */
+    font-size: 22px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(45, 63, 102, 0.25);
+    transition: all 0.2s;
+}
+
+        .btn-submit:hover {
+            background: var(--primary-slate-dark);
+            transform: translateY(-2px);
+        }
+
+        .top-action-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .btn-nav-back {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: var(--glass-border);
+            color: var(--text-primary);
+            padding: 14px 24px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-nav-back:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            background: rgba(255, 255, 255, 0.28);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            padding: 8px;
+            border-radius: 20px;
+            border: var(--glass-border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-height: 52px;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .tab-btn.active {
+            background: var(--primary-slate);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(45, 63, 102, 0.25);
+        }
+
+        .day-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .day-box {
+    min-height: 70px;
+    border-radius: 24px; /* Fully rounded pill corners for day selector */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    padding: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+        .day-box:hover {
+            transform: translateY(-2px);
+        }
+
+.task-item {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 22px; /* Smooth rounded corners for Daily Schedule tasks */
+    padding: 22px;
+    margin-bottom: 16px;
+}
+        .task-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .task-header input[type="checkbox"] {
+            width: 26px;
+            height: 26px;
+            accent-color: var(--primary-slate);
+            cursor: pointer;
+        }
+        /* Clickable Underlined Task Title Link */
+.task-title-link {
+    color: var(--text-main);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    font-size: 20px;
+    font-weight: 700;
+    transition: color 0.2s ease;
+}
+
+.task-title-link:hover {
+    color: var(--primary-accent);
+}
+
+/* Bottom Right Controls Container */
+.custom-controls-bottom-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+    padding-bottom: 20px;
+    width: 100%;
+}
+/* Styling for title links */
+.task-title-link {
+    color: var(--text-primary);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    font-size: 20px;
+    font-weight: 700;
+    transition: color 0.2s ease;
+}
+
+.task-title-link:hover {
+    color: var(--primary-slate);
+}
+        details {
+            margin-top: 12px;
+            padding-left: 42px;
+            font-size: 17px;
+            color: var(--text-secondary);
+        }
+
+        summary {
+            cursor: pointer;
+            color: var(--primary-slate);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 14px;
+            height: 22px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-slate);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .chat-box {
+            height: 420px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.28);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-msg {
+            max-width: 75%;
+            padding: 16px 22px;
+            border-radius: 20px;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            background-color: var(--primary-slate);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-msg.assistant {
+            align-self: flex-start;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 24px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: var(--glass-border);
+        }
+
+        .metric-card h4 {
+            color: var(--text-muted);
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+
+        .metric-card p {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary-slate);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 800px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.full-width { grid-column: span 1; }
+            .day-grid { grid-template-columns: repeat(4, 1fr); }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .tabs-container { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="web-container">
+
+        <div id="screen-onboarding" class="screen hidden">
+            <div class="glass-card">
+                <p class="big-title">Tell Us About Yourself</p>
+                <p class="subtitle">Let us design a comfortable daily wellness plan tailored for you.</p>
+                
+                <form id="onboarding-form" onsubmit="handleOnboardingSubmit(event)">
+                    <div class="form-grid">
+                        
+                        <div class="form-group">
+                            <label for="onboard-mood">1. How is your mood today?</label>
+                            <select id="onboard-mood">
+                                <option>Very Sad</option>
+                                <option>Sad</option>
+                                <option selected>Neutral</option>
+                                <option>Happy</option>
+                                <option>Very Happy</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="onboard-energy">2. Typical daily energy level?</label>
+                            <select id="onboard-energy">
+                                <option>Low Energy (Gentle activities)</option>
+                                <option selected>Steady Energy</option>
+                                <option>High Energy (Active routines)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="onboarding-challenges">3. What emotional or mental challenges have you been experiencing?</label>
+                            <div class="input-with-speech">
+                                <textarea id="onboarding-challenges" name="challenges" rows="3" placeholder="e.g., Feeling anxious, trouble sleeping, feeling overwhelmed..." class="glass-input"></textarea>
+                                <button type="button" class="btn-mic" onclick="toggleVoiceInput('onboarding-challenges', this)" title="Voice Input">🎙️</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>4. Preferred movement activities:</label>
+                            <div id="physicalCheckboxes" class="checkbox-group">
+                                <label class="checkbox-label"><input type="checkbox" value="Outdoor Walking" checked> Outdoor Walking</label>
+                                <label class="checkbox-label"><input type="checkbox" value="Chair Stretching"> Chair Stretching</label>
+                                <label class="checkbox-label"><input type="checkbox" value="Light Yoga"> Light Yoga</label>
+                                <label class="checkbox-label"><input type="checkbox" value="Gardening"> Gardening</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>5. How do you stay connected?</label>
+                            <div id="socialCheckboxes" class="checkbox-group">
+                                <label class="checkbox-label"><input type="checkbox" value="Calling Family" checked> Calling Family</label>
+                                <label class="checkbox-label"><input type="checkbox" value="Community Visits"> Community Visits</label>
+                                <label class="checkbox-label"><input type="checkbox" value="Messaging Friends"> Messaging Friends</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="onboarding-hobbies">6. What are your favorite hobbies?</label>
+                            <div class="input-with-speech">
+                                <textarea id="onboarding-hobbies" name="hobbies" rows="3" placeholder="e.g., Reading, painting, playing music..." class="glass-input"></textarea>
+                                <button type="button" class="btn-mic" onclick="toggleVoiceInput('onboarding-hobbies', this)" title="Voice Input">🎙️</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" style="margin-top: 16px;">Generate My Wellness Plan</button>
+                </form>
+            </div>
+        </div>
+<div id="screen-plan" class="screen hidden">
+            <div class="top-action-bar">
+                <button class="btn-nav-back" onclick="navigate('Onboarding')">Edit Preferences</button>
+                <button class="btn-nav-back" onclick="navigate('Reflection')">Reflection</button>
+        </div>
+
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchTab(event, 'daily-plan')">Daily Plan</button>
+                <button class="tab-btn" onclick="switchTab(event, 'ai-companion')">AI Companion</button>
+                <button class="tab-btn" onclick="switchTab(event, 'dashboard')">Dashboard</button>
+                <button class="tab-btn" onclick="switchTab(event, 'journal')">Journal</button>
+                <button class="tab-btn" onclick="switchTab(event, 'caregiver')">Caregiver</button>
+            </div>
+
+            <div id="tab-daily-plan" class="tab-content">
+                <div class="glass-card">
+                    <h2>Weekly Wellness Calendar</h2>
+                    <p style="font-size: 17px; color: var(--text-muted); margin-bottom: 20px;">Click any day to open its task schedule:</p>
+
+                    <div id="day-grid" class="day-grid"></div>
+                    <div id="routine-banner" style="padding: 20px; border-radius: 18px; margin-bottom: 24px; backdrop-filter: blur(10px);"></div>
+                    <div id="task-list"></div>
+
+                    <h4 style="margin-top: 24px;">Today's Completion</h4>
+                    <div class="progress-container">
+                        <div id="daily-progress-bar" class="progress-bar"></div>
+                    </div>
+                    <p id="daily-progress-text" style="font-size: 16px; color: var(--text-muted);"></p>
+
+                    <hr style="margin: 24px 0; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.6);">
+
+                    <h4>Overall Weekly Completion</h4>
+                    <div class="progress-container">
+                        <div id="weekly-progress-bar" class="progress-bar" style="background-color: var(--accent-sage);"></div>
+                    </div>
+                    <p id="weekly-progress-text" style="font-size: 16px; font-weight: 700;"></p>
+                </div>
+            </div>
+
+            <div id="tab-ai-companion" class="tab-content hidden">
+                <div class="glass-card">
+                    <h2>Your AI Wellness Companion</h2>
+                    <p class="subtitle">Ask anything or share how you are feeling today.</p>
+                    
+                    <div id="chat-box" class="chat-box"></div>
+                    
+                    <div class="chat-input-row">
+                        <button type="button" id="mic-btn" class="btn-nav-back" style="min-width: 58px; padding: 0 16px; font-size: 20px;" onclick="toggleChatMic()" title="Voice Input">🎙️</button>
+                        <input type="text" id="chat-msg-input" placeholder="Type or speak your message..." onkeypress="if(event.key==='Enter') sendChatMessage()" onfocus="stopSpeaking()">
+                        <button class="btn-submit" style="width: 140px;" onclick="sendChatMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-dashboard" class="tab-content hidden">
+                <div class="glass-card">
+                    <h2>Wellness Summary</h2>
+                    <p class="subtitle">Overview of your current health stats.</p>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <h4>Mood</h4>
+                            <p>Happy</p>
+                        </div>
+                        <div class="metric-card">
+                            <h4>Medication</h4>
+                            <p>✔ Taken</p>
+                        </div>
+                        <div class="metric-card">
+                            <h4>Routine</h4>
+                            <p>80%</p>
+                        </div>
+                        <div class="metric-card">
+                            <h4>Score</h4>
+                            <p>91</p>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(255, 255, 255, 0.45); backdrop-filter: blur(10px); border-left: 6px solid var(--primary-slate); padding: 20px; border-radius: 16px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.7);">
+                        <strong>AI Daily Advice:</strong><br>
+                        • Take a 15 min light walk &nbsp;|&nbsp; • Call family &nbsp;|&nbsp; • Practice deep breathing
+                    </div>
+
+                    <div>
+                        <h4 style="margin-bottom: 12px;">Weekly Trends</h4>
+                        <div style="height: 280px;">
+                            <canvas id="wellnessChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-journal" class="tab-content hidden">
+                <div class="glass-card">
+                    <h2>Wellness Journal</h2>
+                    <p class="subtitle">Express your thoughts freely in a safe place.</p>
+
+                    <div class="form-group">
+                        <div class="input-with-speech">
+                            <textarea id="journal-input" rows="6" placeholder="Write or speak your thoughts here..."></textarea>
+                            <button type="button" class="btn-mic" onclick="toggleVoiceInput('journal-input', this)" title="Voice Input">🎙️</button>
+                        </div>
+                    </div>
+                    <button class="btn-submit" onclick="saveJournalEntry()">Save Journal Entry</button>
+                    <div id="journal-response" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+
+            <div id="tab-caregiver" class="tab-content hidden">
+                <div class="glass-card">
+                    <h2>Caregiver Overview</h2>
+                    <p class="subtitle">Summary status for family & health supporters.</p>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <h4>Overall Health</h4>
+                            <p>91%</p>
+                        </div>
+                        <div class="metric-card">
+                            <h4>Adherence</h4>
+                            <p>95%</p>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(220, 252, 231, 0.45); backdrop-filter: blur(10px); border-left: 6px solid var(--accent-sage); padding: 20px; border-radius: 16px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.7);">
+                        ✔ All routines normal. No emergency flags detected today.
+                    </div>
+
+                    <div>
+                        <strong>Latest AI Insight:</strong>
+                        <p style="margin-top: 8px; color: var(--text-secondary);">User shows high emotional consistency. Maintaining current routine is recommended.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="screen-reflection" class="screen hidden">
+            <button class="btn-nav-back" onclick="navigate('Plan')" style="margin-bottom: 20px;">⬅️ Back to Wellness Hub</button>
+
+            <div class="glass-card">
+                <p class="big-title">📖 Weekly Reflection</p>
+                <p class="subtitle">Review how your wellness plan worked out for you this week.</p>
+
+                <form id="reflection-form" onsubmit="handleReflectionSubmit(event)">
+                    <div class="form-group">
+                        <label for="reflect-liked">What did you enjoy most about this week?</label>
+                        <div class="input-with-speech">
+                            <textarea id="reflect-liked" rows="3" placeholder="Speak or type what worked well..."></textarea>
+                            <button type="button" class="btn-mic" onclick="toggleVoiceInput('reflect-liked', this)" title="Voice Input">🎙️</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reflect-hard">What was hard to complete?</label>
+                        <div class="input-with-speech">
+                            <textarea id="reflect-hard" rows="3" placeholder="Speak or type what was challenging..."></textarea>
+                            <button type="button" class="btn-mic" onclick="toggleVoiceInput('reflect-hard', this)" title="Voice Input">🎙️</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reflect-disliked">Anything you would like to adjust next week?</label>
+                        <div class="input-with-speech">
+                            <textarea id="reflect-disliked" rows="3" placeholder="Speak or type what you would like changed..."></textarea>
+                            <button type="button" class="btn-mic" onclick="toggleVoiceInput('reflect-disliked', this)" title="Voice Input">🎙️</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Submit Reflection & Update Next Week's Plan</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentState = {};
+        let trendChart = null;
+        let formMicRecognition = null;
+        let formMicTargetId = null;
+
+        let chatRecognition = null;
+        let isChatListening = false;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchState();
+        });
+
+        function fetchState() {
+            fetch('/api/state')
+                .then(res => res.json())
+                .then(data => {
+                    currentState = data;
+                    renderApp();
+                });
+        }
+
+        function renderApp() {
+            document.querySelectorAll('.screen').forEach(el => el.classList.add('hidden'));
+
+            if (currentState.current_step === 'Onboarding') {
+                document.getElementById('screen-onboarding').classList.remove('hidden');
+            } else if (currentState.current_step === 'Plan') {
+                document.getElementById('screen-plan').classList.remove('hidden');
+                renderPlanTab();
+            } else if (currentState.current_step === 'Reflection') {
+                document.getElementById('screen-reflection').classList.remove('hidden');
+            }
+        }
+
+        function navigate(step) {
+            fetch('/api/navigate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ step })
+            })
+            .then(res => res.json())
+            .then(data => {
+                currentState = data.state;
+                renderApp();
+            });
+        }
+
+        function getSelectedCheckboxes(containerId) {
+            const checkboxes = document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`);
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        function handleOnboardingSubmit(e) {
+            e.preventDefault();
+            
+            const payload = {
+                mood: document.getElementById('onboard-mood').value,
+                challenges: document.getElementById('onboarding-challenges').value,
+                energy_level: document.getElementById('onboard-energy').value,
+                physical_activities: getSelectedCheckboxes('physicalCheckboxes'),
+                social_pref: getSelectedCheckboxes('socialCheckboxes'),
+                hobbies: document.getElementById('onboarding-hobbies').value
+            };
+
+            fetch('/api/onboarding', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                currentState = data.state;
+                renderApp();
+            });
+        }
+
+        function switchTab(event, tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+            if (tabName === 'dashboard') {
+                renderDashboardChart();
+            }
+        }
+
+        function renderPlanTab() {
+            const routine = currentState.weekly_routine;
+            if (!routine || Object.keys(routine).length === 0) return;
+
+            const gridContainer = document.getElementById('day-grid');
+            gridContainer.innerHTML = '';
+
+            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+            days.forEach(day => {
+                if (!routine[day]) return;
+                const dayData = routine[day];
+                const isSelected = day === currentState.selected_day;
+
+                const box = document.createElement('div');
+                box.className = 'day-box';
+                box.style.backgroundColor = dayData.bg_color;
+                box.style.color = dayData.color;
+                box.style.border = isSelected ? `2.5px solid ${dayData.color}` : `1px solid rgba(255,255,255,0.7)`;
+                box.innerText = day;
+
+                box.onclick = () => selectDay(day);
+                gridContainer.appendChild(box);
+            });
+
+            const activeDay = currentState.selected_day;
+            const activeData = routine[activeDay];
+            const banner = document.getElementById('routine-banner');
+            banner.style.backgroundColor = activeData.bg_color;
+            banner.style.borderLeft = `6px solid ${activeData.color}`;
+            banner.innerHTML = `
+                <h3 style="color: ${activeData.color}; font-size: 22px;"> ${activeDay} — ${activeData.theme}</h3>
+            `;
+
+            const taskListContainer = document.getElementById('task-list');
+            taskListContainer.innerHTML = '';
+
+          activeData.tasks.forEach((task, idx) => {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = 'task-item';
+
+                // Checks if link exists, and turns the title into an underlined clickable link
+                const titleHtml = (task.link && task.link !== '#') 
+                    ? `<a href="${task.link}" target="_blank" class="task-title-link">${task.name}</a>`
+                    : `<span>${task.name}</span>`;
+
+                taskDiv.innerHTML = `
+                    <div class="task-header">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${activeDay}', ${idx}, this.checked)">
+                        ${titleHtml}
+                    </div>
+                    <details>
+                        <summary>Why this helps</summary>
+                        <p>${task.desc}</p>
+                    </details>
+                `;
+                taskListContainer.appendChild(taskDiv);
+            });
+
+            const completedCount = activeData.tasks.filter(t => t.completed).length;
+            const totalCount = activeData.tasks.length;
+            const dayPct = Math.round((completedCount / totalCount) * 100);
+
+            document.getElementById('daily-progress-bar').style.width = `${dayPct}%`;
+            document.getElementById('daily-progress-text').innerText = `${completedCount} of ${totalCount} completed (${dayPct}%)`;
+
+            let totalWeeklyTasks = 0;
+            let totalWeeklyCompleted = 0;
+            Object.values(routine).forEach(d => {
+                totalWeeklyTasks += d.tasks.length;
+                totalWeeklyCompleted += d.tasks.filter(t => t.completed).length;
+            });
+            const weeklyPct = Math.round((totalWeeklyCompleted / totalWeeklyTasks) * 100);
+
+            document.getElementById('weekly-progress-bar').style.width = `${weeklyPct}%`;
+            document.getElementById('weekly-progress-text').innerText = `${totalWeeklyCompleted} of ${totalWeeklyTasks} tasks finished across all 7 days (${weeklyPct}%)`;
+        }
+
+        function selectDay(day) {
+            fetch('/api/select_day', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ day })
+            })
+            .then(res => res.json())
+            .then(data => {
+                currentState = data.state;
+                renderPlanTab();
+            });
+        }
+
+        function toggleTask(day, task_idx, completed) {
+            fetch('/api/toggle_task', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ day, task_idx, completed })
+            })
+            .then(res => res.json())
+            .then(data => {
+                currentState = data.state;
+                renderPlanTab();
+            });
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-msg-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            stopChatListening();
+            stopSpeaking();
+
+            input.value = '';
+            const chatBox = document.getElementById('chat-box');
+
+            chatBox.innerHTML += `<div class="chat-msg user">${msg}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            })
+            .then(res => res.json())
+            .then(data => {
+                currentState.messages = data.messages;
+                renderChatMessages();
+
+                const lastMsg = data.messages[data.messages.length - 1];
+                if (lastMsg && lastMsg.role === 'assistant') {
+                    speakText(lastMsg.content);
+                }
+            });
+        }
+
+        function renderChatMessages() {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = '';
+            currentState.messages.forEach(m => {
+                chatBox.innerHTML += `<div class="chat-msg ${m.role}">${m.content}</div>`;
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function renderDashboardChart() {
+            const ctx = document.getElementById('wellnessChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Wellness Score',
+                        data: [78, 82, 80, 85, 90, 88, 91],
+                        borderColor: '#3b5284',
+                        backgroundColor: 'rgba(59, 82, 132, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function saveJournalEntry() {
+            const entry = document.getElementById('journal-input').value;
+            fetch('/api/journal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entry })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('journal-response').innerHTML = `
+                    <div style="background-color:rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); padding:16px; border-radius:14px; color:var(--primary-slate); font-weight:bold; border: 1px solid rgba(255,255,255,0.8);">
+                        ✔ Saved!<br><span style="font-weight:normal; color: var(--text-primary);">${data.summary}</span>
+                    </div>
+                `;
+            });
+        }
+
+        /* -------------------------------------------------------------
+           FORM VOICE INPUT (STT FOR TEXTAREAS)
+        ------------------------------------------------------------- */
+        function toggleVoiceInput(targetElementId, btnElement) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Web Speech API is not supported in this browser.');
+                return;
+            }
+
+            const targetElement = document.getElementById(targetElementId);
+            if (!targetElement) return;
+
+            if (formMicRecognition && formMicTargetId === targetElementId) {
+                formMicRecognition.stop();
+                return;
+            }
+
+            if (formMicRecognition) {
+                formMicRecognition.stop();
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                formMicRecognition = recognition;
+                formMicTargetId = targetElementId;
+                btnElement.classList.add('recording');
+                btnElement.innerText = '🛑';
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                targetElement.value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                stopVoiceInput(btnElement);
+            };
+
+            recognition.onend = () => {
+                stopVoiceInput(btnElement);
+            };
+
+            recognition.start();
+        }
+
+        function stopVoiceInput(btnElement) {
+            if (formMicRecognition) {
+                formMicRecognition = null;
+                formMicTargetId = null;
+            }
+            if (btnElement) {
+                btnElement.classList.remove('recording');
+                btnElement.innerText = '🎙️';
+            }
+        }
+
+        /* -------------------------------------------------------------
+           CHAT MIC RECOGNITION (STT FOR AI COMPANION)
+        ------------------------------------------------------------- */
+        function toggleChatMic() {
+            stopSpeaking();
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Web Speech API is not supported in this browser. Please use Chrome or Edge.');
+                return;
+            }
+
+            if (isChatListening) {
+                stopChatListening();
+                return;
+            }
+
+            chatRecognition = new SpeechRecognition();
+            chatRecognition.continuous = false;
+            chatRecognition.interimResults = true;
+            chatRecognition.lang = 'en-US';
+
+            chatRecognition.onstart = () => {
+                isChatListening = true;
+                const micBtn = document.getElementById('mic-btn');
+                if (micBtn) {
+                    micBtn.classList.add('mic-active');
+                    micBtn.innerText = '🛑';
+                }
+            };
+
+            chatRecognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                const inputField = document.getElementById('chat-msg-input');
+                if (inputField) {
+                    inputField.value = transcript;
+                }
+            };
+
+            chatRecognition.onerror = (event) => {
+                console.error('Chat Speech Recognition Error:', event.error);
+                stopChatListening();
+            };
+
+            chatRecognition.onend = () => {
+                stopChatListening();
+            };
+
+            try {
+                chatRecognition.start();
+            } catch (err) {
+                console.error('Failed to start chat speech recognition:', err);
+            }
+        }
+
+        function stopChatListening() {
+            if (chatRecognition) {
+                try { chatRecognition.abort(); } catch (err) {}
+                chatRecognition = null;
+            }
+            isChatListening = false;
+            const micBtn = document.getElementById('mic-btn');
+            if (micBtn) {
+                micBtn.classList.remove('mic-active');
+                micBtn.innerText = '🎙️';
+            }
+        }
+
+        /* -------------------------------------------------------------
+           TEXT TO SPEECH ENGINE (TTS READOUT)
+        ------------------------------------------------------------- */
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+            stopSpeaking();
+
+            const cleanText = text
+                .replace(/<[^>]*>/g, '')
+                .replace(/[\*\_#\`]/g, '')
+                .trim();
+
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.rate = 1.1;
+            utterance.pitch = 1.0;
+
+            const setVoiceAndSpeak = () => {
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find(v => 
+                    v.lang.includes('en') && (
+                        v.name.includes('Google US English') ||
+                        v.name.includes('Natural') ||
+                        v.name.includes('Samantha') ||
+                        v.name.includes('Karen') ||
+                        v.name.includes('Victoria') ||
+                        v.name.includes('Zira') ||
+                        v.name.includes('Jenny')
+                    )
+                ) || voices.find(v => v.lang.startsWith('en'));
+
+                if (preferredVoice) {
+                    utterance.voice = preferredVoice;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            };
+
+            if (window.speechSynthesis.getVoices().length !== 0) {
+                setVoiceAndSpeak();
+            } else {
+                window.speechSynthesis.onvoiceschanged = setVoiceAndSpeak;
+            }
+        }
+
+        function stopSpeaking() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function handleReflectionSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                liked: document.getElementById('reflect-liked').value,
+                hard: document.getElementById('reflect-hard').value,
+                disliked: document.getElementById('reflect-disliked').value
+            };
+
+            fetch('/api/reflection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    liked: document.getElementById('reflect-liked').value,
+                    hard: document.getElementById('reflect-hard').value,
+                    disliked: document.getElementById('reflect-disliked').value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                currentState = data.state;
+                alert("Thank you for your feedback! Your wellness plan for next week has been updated.");
+                renderApp();
+            });
+        }
+
+        /* --- THEME TOGGLE & ACCENT COLOR PICKER LOGIC --- */
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            
+            const themeIcon = document.getElementById('theme-icon');
+            if (themeIcon) {
+                themeIcon.innerText = newTheme === 'dark' ? '☀️' : '🌙';
+            }
+        }
+
+        // Attach Color Picker Listener on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            const colorPicker = document.getElementById('accent-picker');
+            if (colorPicker) {
+                colorPicker.addEventListener('input', (e) => {
+                    const chosenColor = e.target.value;
+                    document.documentElement.style.setProperty('--primary-accent', chosenColor);
+                    document.documentElement.style.setProperty('--primary-slate', chosenColor);
+                });
+            }
+        });
+        // Fetch latest state when index.html loads and render the questionnaire view
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/state')
+        .then(res => res.json())
+        .then(data => {
+            currentState = data;
+            renderApp(); // Renders screen-onboarding when current_step is 'Onboarding'
+        })
+        .catch(err => console.error("Error fetching state on load:", err));
+});
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/api/state')
+        .then(res => res.json())
+        .then(data => {
+            currentState = data;
+            renderApp();
+        })
+        .catch(err => console.error("Error fetching initial state:", err));
+});
+    </script>
+</body>
+</html>
