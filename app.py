@@ -559,4 +559,47 @@ def submit_reflection():
                 "2. If an activity was too hard, replace or modify it to be significantly easier and gentler.\n"
                 "3. Keep and emphasize activities similar to what they enjoyed.\n"
                 "4. Return ONLY a valid JSON object with the exact structure containing keys: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday.\n"
-                "5. Each day must have 'theme' (str), 'color' (str hex), 'bg_color' ('rgba(255, 255, 255, 0.45)'), and 'tasks' (list of 4 tasks).
+                "5. Each day must have 'theme' (str), 'color' (str hex), 'bg_color' ('rgba(255, 255, 255, 0.45)'), and 'tasks' (list of 4 tasks).\n"
+                "6. Each task must have 'name' (str), 'desc' (str), 'link' (str), and 'completed' (boolean False)."
+            )
+
+            completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Current Routine: {json.dumps(state['weekly_routine'])}"}
+                ],
+                temperature=0.7,
+                response_format={"type": "json_object"}
+            )
+            
+            updated_routine = json.loads(completion.choices[0].message.content)
+            if updated_routine and "Monday" in updated_routine:
+                state["weekly_routine"] = updated_routine
+            else:
+                state["weekly_routine"] = generate_routine(state["user_profile"], feedback=feedback)
+        except Exception as e:
+            print(f"Error regenerating routine with Groq: {e}")
+            state["weekly_routine"] = generate_routine(state["user_profile"], feedback=feedback)
+    else:
+        state["weekly_routine"] = generate_routine(state["user_profile"], feedback=feedback)
+
+    state["selected_day"] = "Monday"
+    state["current_step"] = "Plan"
+    return jsonify({"success": True, "state": state})
+def open_browser():
+    webbrowser.open_new(f"http://127.0.0.1:{PORT}/")
+
+@app.route('/images/<path:filename>')
+def serve_image(filename):
+    # 1. Check if file is in an 'images' subfolder
+    if os.path.exists(os.path.join('images', filename)):
+        return send_from_directory('images', filename)
+    # 2. Otherwise serve directly from the main project directory
+    return send_from_directory('.', filename)
+
+if __name__ == '__main__':
+    print(f"Starting DailyMind server on http://127.0.0.1:{PORT}")
+    if not os.environ.get("RENDER") and os.environ.get("DISABLE_BROWSER_OPEN") != "1":
+        Timer(1.2, open_browser).start()
+    app.run(host='0.0.0.0', port=PORT, debug=os.environ.get("FLASK_DEBUG") == "1")

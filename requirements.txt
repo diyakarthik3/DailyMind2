@@ -1,3 +1,5 @@
 Flask==3.0.3
 groq==0.9.0
-# groq 0.9.0 pass
+# groq 0.9.0 passes a `proxies` arg that is removed in httpx 0.28+
+httpx==0.27.2
+gunicorn==22.0.0
