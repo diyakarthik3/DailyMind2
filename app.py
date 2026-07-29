@@ -2,6 +2,7 @@ import json
 import os
 import re
 import webbrowser
+from datetime import datetime
 from threading import Timer
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from groq import Groq
@@ -37,11 +38,25 @@ state = {
     "mood_history": [],
     "journal_entries": [],
     "meds": [
-        {"Medicine": "Vitamin D", "Time": "8 AM", "Taken": True},
-        {"Medicine": "Blood Pressure", "Time": "2 PM", "Taken": False},
-        {"Medicine": "Calcium", "Time": "8 PM", "Taken": False}
+        {"id": "med-1", "name": "Vitamin D", "time": "08:00", "taken": True},
+        {"id": "med-2", "name": "Blood Pressure", "time": "14:00", "taken": False},
+        {"id": "med-3", "name": "Calcium", "time": "20:00", "taken": False}
     ]
 }
+
+
+def normalize_medication(item):
+    """Normalize legacy and new med entries into one stable API shape."""
+    med_name = str(item.get("name") or item.get("Medicine") or "").strip()
+    med_time = str(item.get("time") or item.get("Time") or "").strip()
+    med_id = str(item.get("id") or f"med-{datetime.now().timestamp()}")
+    taken_value = item.get("taken") if "taken" in item else item.get("Taken", False)
+    return {
+        "id": med_id,
+        "name": med_name,
+        "time": med_time,
+        "taken": bool(taken_value)
+    }
 
 def clean_hobbies(raw_hobbies):
     if not raw_hobbies or not isinstance(raw_hobbies, str):
@@ -422,6 +437,43 @@ def toggle_task():
 
     return jsonify({"success": True, "state": state})
 
+
+@app.route('/api/medications', methods=['POST'])
+def add_medication():
+    data = request.json or {}
+    med_name = str(data.get("name", "")).strip()
+    med_time = str(data.get("time", "")).strip()
+
+    if not med_name or not med_time:
+        return jsonify({"success": False, "error": "Medication name and time are required."}), 400
+
+    state["meds"] = [normalize_medication(m) for m in state.get("meds", [])]
+    state["meds"].append(
+        {
+            "id": f"med-{int(datetime.now().timestamp() * 1000)}",
+            "name": med_name,
+            "time": med_time,
+            "taken": False
+        }
+    )
+    return jsonify({"success": True, "state": state})
+
+
+@app.route('/api/medications/toggle', methods=['POST'])
+def toggle_medication():
+    data = request.json or {}
+    med_id = str(data.get("id", "")).strip()
+    taken = bool(data.get("taken", False))
+
+    state["meds"] = [normalize_medication(m) for m in state.get("meds", [])]
+
+    for med in state["meds"]:
+        if med["id"] == med_id:
+            med["taken"] = taken
+            break
+
+    return jsonify({"success": True, "state": state})
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.json or {}
@@ -507,47 +559,4 @@ def submit_reflection():
                 "2. If an activity was too hard, replace or modify it to be significantly easier and gentler.\n"
                 "3. Keep and emphasize activities similar to what they enjoyed.\n"
                 "4. Return ONLY a valid JSON object with the exact structure containing keys: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday.\n"
-                "5. Each day must have 'theme' (str), 'color' (str hex), 'bg_color' ('rgba(255, 255, 255, 0.45)'), and 'tasks' (list of 4 tasks).\n"
-                "6. Each task must have 'name' (str), 'desc' (str), 'link' (str), and 'completed' (boolean False)."
-            )
-
-            completion = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"Current Routine: {json.dumps(state['weekly_routine'])}"}
-                ],
-                temperature=0.7,
-                response_format={"type": "json_object"}
-            )
-            
-            updated_routine = json.loads(completion.choices[0].message.content)
-            if updated_routine and "Monday" in updated_routine:
-                state["weekly_routine"] = updated_routine
-            else:
-                state["weekly_routine"] = generate_routine(state["user_profile"], feedback=feedback)
-        except Exception as e:
-            print(f"Error regenerating routine with Groq: {e}")
-            state["weekly_routine"] = generate_routine(state["user_profile"], feedback=feedback)
-    else:
-        state["weekly_routine"] = generate_routine(state["user_profile"], feedback=feedback)
-
-    state["selected_day"] = "Monday"
-    state["current_step"] = "Plan"
-    return jsonify({"success": True, "state": state})
-def open_browser():
-    webbrowser.open_new(f"http://127.0.0.1:{PORT}/")
-
-@app.route('/images/<path:filename>')
-def serve_image(filename):
-    # 1. Check if file is in an 'images' subfolder
-    if os.path.exists(os.path.join('images', filename)):
-        return send_from_directory('images', filename)
-    # 2. Otherwise serve directly from the main project directory
-    return send_from_directory('.', filename)
-
-if __name__ == '__main__':
-    print(f"Starting DailyMind server on http://127.0.0.1:{PORT}")
-    if not os.environ.get("RENDER") and os.environ.get("DISABLE_BROWSER_OPEN") != "1":
-        Timer(1.2, open_browser).start()
-    app.run(host='0.0.0.0', port=PORT, debug=os.environ.get("FLASK_DEBUG") == "1")
+                "5. Each day must have 'theme' (str), 'color' (str hex), 'bg_color' ('rgba(255, 255, 255, 0.45)'), and 'tasks' (list of 4 tasks).

@@ -694,6 +694,15 @@
                         <div id="weekly-progress-bar" class="progress-bar" style="background-color: var(--accent-sage);"></div>
                     </div>
                     <p id="weekly-progress-text" style="font-size: 16px; font-weight: 700;"></p>
+
+                    <hr style="margin: 24px 0; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.6);">
+                    <h4>Medication Reminders</h4>
+                    <div style="display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 10px; align-items: center; margin-bottom: 12px;">
+                        <input id="medication-name-input" type="text" placeholder="Medication name (e.g., Vitamin D)">
+                        <input id="medication-time-input" type="time">
+                        <button class="btn-submit" type="button" style="min-height: 48px; width: auto; padding: 10px 18px; font-size: 16px; border-radius: 14px;" onclick="addMedicationReminder()">Add</button>
+                    </div>
+                    <div id="medication-reminder-list"></div>
                 </div>
             </div>
 
@@ -720,19 +729,19 @@
                     <div class="metrics-grid">
                         <div class="metric-card">
                             <h4>Mood</h4>
-                            <p>Happy</p>
+                            <p id="metric-mood">-</p>
                         </div>
                         <div class="metric-card">
                             <h4>Medication</h4>
-                            <p>✔ Taken</p>
+                            <p id="metric-medication">-</p>
                         </div>
                         <div class="metric-card">
                             <h4>Routine</h4>
-                            <p>80%</p>
+                            <p id="metric-routine">-</p>
                         </div>
                         <div class="metric-card">
                             <h4>Score</h4>
-                            <p>91</p>
+                            <p id="metric-score">-</p>
                         </div>
                     </div>
 
@@ -774,16 +783,16 @@
                     <div class="metrics-grid">
                         <div class="metric-card">
                             <h4>Overall Health</h4>
-                            <p>91%</p>
+                            <p id="caregiver-health">-</p>
                         </div>
                         <div class="metric-card">
                             <h4>Adherence</h4>
-                            <p>95%</p>
+                            <p id="caregiver-adherence">-</p>
                         </div>
                     </div>
 
-                    <div style="background: rgba(220, 252, 231, 0.45); backdrop-filter: blur(10px); border-left: 6px solid var(--accent-sage); padding: 20px; border-radius: 16px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.7);">
-                        ✔ All routines normal. No emergency flags detected today.
+                    <div id="caregiver-status" style="background: rgba(220, 252, 231, 0.45); backdrop-filter: blur(10px); border-left: 6px solid var(--accent-sage); padding: 20px; border-radius: 16px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.7);">
+                        -
                     </div>
 
                     <div>
@@ -842,6 +851,7 @@
 
         let chatRecognition = null;
         let isChatListening = false;
+        let reminderTimeoutIds = [];
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchState();
@@ -919,7 +929,10 @@
             document.getElementById(`tab-${tabName}`).classList.remove('hidden');
 
             if (tabName === 'dashboard') {
+                renderDashboardSummary();
                 renderDashboardChart();
+            } else if (tabName === 'caregiver') {
+                renderCaregiverOverview();
             }
         }
 
@@ -999,6 +1012,9 @@
 
             document.getElementById('weekly-progress-bar').style.width = `${weeklyPct}%`;
             document.getElementById('weekly-progress-text').innerText = `${totalWeeklyCompleted} of ${totalWeeklyTasks} tasks finished across all 7 days (${weeklyPct}%)`;
+
+            renderMedicationReminderList();
+            scheduleMedicationReminders();
         }
 
         function selectDay(day) {
@@ -1025,6 +1041,92 @@
                 currentState = data.state;
                 renderPlanTab();
             });
+        }
+
+        function getRoutineStats() {
+            const routine = currentState.weekly_routine || {};
+            const selectedDay = currentState.selected_day || 'Monday';
+            const selectedTasks = routine[selectedDay]?.tasks || [];
+            const dayCompleted = selectedTasks.filter(t => t.completed).length;
+            const dayTotal = selectedTasks.length;
+            const dayPct = dayTotal ? Math.round((dayCompleted / dayTotal) * 100) : 0;
+
+            let weeklyCompleted = 0;
+            let weeklyTotal = 0;
+            Object.values(routine).forEach(d => {
+                const tasks = d.tasks || [];
+                weeklyTotal += tasks.length;
+                weeklyCompleted += tasks.filter(t => t.completed).length;
+            });
+            const weeklyPct = weeklyTotal ? Math.round((weeklyCompleted / weeklyTotal) * 100) : 0;
+            return { dayPct, weeklyPct };
+        }
+
+        function getMedicationStats() {
+            const meds = currentState.meds || [];
+            const total = meds.length;
+            const taken = meds.filter(m => m.taken).length;
+            const adherencePct = total ? Math.round((taken / total) * 100) : 0;
+            return { total, taken, adherencePct };
+        }
+
+        function getMoodPercent() {
+            const mood = (currentState.user_profile?.mood || 'Neutral').trim();
+            const moodToPct = {
+                'Very Sad': 20,
+                'Sad': 40,
+                'Neutral': 60,
+                'Happy': 80,
+                'Very Happy': 100
+            };
+            return moodToPct[mood] || 60;
+        }
+
+        function calculateWellnessScore(routinePct, medicationPct, moodPct) {
+            return Math.round((routinePct * 0.6) + (medicationPct * 0.25) + (moodPct * 0.15));
+        }
+
+        function buildWeeklyTrendScores() {
+            const routine = currentState.weekly_routine || {};
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const medPct = getMedicationStats().adherencePct;
+            const moodPct = getMoodPercent();
+
+            // Keep one metric only for the chart: score.
+            return days.map(day => {
+                const tasks = routine[day]?.tasks || [];
+                const completed = tasks.filter(t => t.completed).length;
+                const dayPct = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
+                return Math.round((dayPct * 0.75) + (medPct * 0.15) + (moodPct * 0.10));
+            });
+        }
+
+        function renderDashboardSummary() {
+            const mood = currentState.user_profile?.mood || 'Not set';
+            const { weeklyPct } = getRoutineStats();
+            const { total, taken, adherencePct } = getMedicationStats();
+            const score = calculateWellnessScore(weeklyPct, adherencePct, getMoodPercent());
+
+            document.getElementById('metric-mood').innerText = mood;
+            document.getElementById('metric-medication').innerText = total ? `${taken}/${total} Taken` : 'No reminders';
+            document.getElementById('metric-routine').innerText = `${weeklyPct}%`;
+            document.getElementById('metric-score').innerText = `${score}`;
+        }
+
+        function renderCaregiverOverview() {
+            const { weeklyPct } = getRoutineStats();
+            const { total, taken, adherencePct } = getMedicationStats();
+            const score = calculateWellnessScore(weeklyPct, adherencePct, getMoodPercent());
+
+            document.getElementById('caregiver-health').innerText = `${score}%`;
+            document.getElementById('caregiver-adherence').innerText = total ? `${adherencePct}%` : 'No meds';
+
+            const statusEl = document.getElementById('caregiver-status');
+            if (weeklyPct >= 70 && adherencePct >= 70) {
+                statusEl.innerText = 'OK Routines and medication are on track today.';
+            } else {
+                statusEl.innerText = 'Attention Some routines or medications need follow-up today.';
+            }
         }
 
         function sendChatMessage() {
@@ -1070,6 +1172,7 @@
         function renderDashboardChart() {
             const ctx = document.getElementById('wellnessChart').getContext('2d');
             if (trendChart) trendChart.destroy();
+            const weeklyScores = buildWeeklyTrendScores();
 
             trendChart = new Chart(ctx, {
                 type: 'line',
@@ -1077,7 +1180,7 @@
                     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                     datasets: [{
                         label: 'Wellness Score',
-                        data: [78, 82, 80, 85, 90, 88, 91],
+                        data: weeklyScores,
                         borderColor: '#3b5284',
                         backgroundColor: 'rgba(59, 82, 132, 0.15)',
                         fill: true,
@@ -1109,259 +1212,118 @@
             });
         }
 
-        /* -------------------------------------------------------------
-           FORM VOICE INPUT (STT FOR TEXTAREAS)
-        ------------------------------------------------------------- */
-        function toggleVoiceInput(targetElementId, btnElement) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert('Web Speech API is not supported in this browser.');
+        function addMedicationReminder() {
+            const nameEl = document.getElementById('medication-name-input');
+            const timeEl = document.getElementById('medication-time-input');
+            const name = nameEl.value.trim();
+            const time = timeEl.value;
+
+            if (!name || !time) {
+                alert('Please enter both medication name and reminder time.');
                 return;
             }
 
-            const targetElement = document.getElementById(targetElementId);
-            if (!targetElement) return;
-
-            if (formMicRecognition && formMicTargetId === targetElementId) {
-                formMicRecognition.stop();
-                return;
-            }
-
-            if (formMicRecognition) {
-                formMicRecognition.stop();
-            }
-
-            const recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
-
-            recognition.onstart = () => {
-                formMicRecognition = recognition;
-                formMicTargetId = targetElementId;
-                btnElement.classList.add('recording');
-                btnElement.innerText = '🛑';
-            };
-
-            recognition.onresult = (event) => {
-                let transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    transcript += event.results[i][0].transcript;
-                }
-                targetElement.value = transcript;
-            };
-
-            recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                stopVoiceInput(btnElement);
-            };
-
-            recognition.onend = () => {
-                stopVoiceInput(btnElement);
-            };
-
-            recognition.start();
-        }
-
-        function stopVoiceInput(btnElement) {
-            if (formMicRecognition) {
-                formMicRecognition = null;
-                formMicTargetId = null;
-            }
-            if (btnElement) {
-                btnElement.classList.remove('recording');
-                btnElement.innerText = '🎙️';
-            }
-        }
-
-        /* -------------------------------------------------------------
-           CHAT MIC RECOGNITION (STT FOR AI COMPANION)
-        ------------------------------------------------------------- */
-        function toggleChatMic() {
-            stopSpeaking();
-
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert('Web Speech API is not supported in this browser. Please use Chrome or Edge.');
-                return;
-            }
-
-            if (isChatListening) {
-                stopChatListening();
-                return;
-            }
-
-            chatRecognition = new SpeechRecognition();
-            chatRecognition.continuous = false;
-            chatRecognition.interimResults = true;
-            chatRecognition.lang = 'en-US';
-
-            chatRecognition.onstart = () => {
-                isChatListening = true;
-                const micBtn = document.getElementById('mic-btn');
-                if (micBtn) {
-                    micBtn.classList.add('mic-active');
-                    micBtn.innerText = '🛑';
-                }
-            };
-
-            chatRecognition.onresult = (event) => {
-                let transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    transcript += event.results[i][0].transcript;
-                }
-                const inputField = document.getElementById('chat-msg-input');
-                if (inputField) {
-                    inputField.value = transcript;
-                }
-            };
-
-            chatRecognition.onerror = (event) => {
-                console.error('Chat Speech Recognition Error:', event.error);
-                stopChatListening();
-            };
-
-            chatRecognition.onend = () => {
-                stopChatListening();
-            };
-
-            try {
-                chatRecognition.start();
-            } catch (err) {
-                console.error('Failed to start chat speech recognition:', err);
-            }
-        }
-
-        function stopChatListening() {
-            if (chatRecognition) {
-                try { chatRecognition.abort(); } catch (err) {}
-                chatRecognition = null;
-            }
-            isChatListening = false;
-            const micBtn = document.getElementById('mic-btn');
-            if (micBtn) {
-                micBtn.classList.remove('mic-active');
-                micBtn.innerText = '🎙️';
-            }
-        }
-
-        /* -------------------------------------------------------------
-           TEXT TO SPEECH ENGINE (TTS READOUT)
-        ------------------------------------------------------------- */
-        function speakText(text) {
-            if (!('speechSynthesis' in window)) return;
-            stopSpeaking();
-
-            const cleanText = text
-                .replace(/<[^>]*>/g, '')
-                .replace(/[\*\_#\`]/g, '')
-                .trim();
-
-            const utterance = new SpeechSynthesisUtterance(cleanText);
-            utterance.rate = 1.1;
-            utterance.pitch = 1.0;
-
-            const setVoiceAndSpeak = () => {
-                const voices = window.speechSynthesis.getVoices();
-                const preferredVoice = voices.find(v => 
-                    v.lang.includes('en') && (
-                        v.name.includes('Google US English') ||
-                        v.name.includes('Natural') ||
-                        v.name.includes('Samantha') ||
-                        v.name.includes('Karen') ||
-                        v.name.includes('Victoria') ||
-                        v.name.includes('Zira') ||
-                        v.name.includes('Jenny')
-                    )
-                ) || voices.find(v => v.lang.startsWith('en'));
-
-                if (preferredVoice) {
-                    utterance.voice = preferredVoice;
-                }
-
-                window.speechSynthesis.speak(utterance);
-            };
-
-            if (window.speechSynthesis.getVoices().length !== 0) {
-                setVoiceAndSpeak();
-            } else {
-                window.speechSynthesis.onvoiceschanged = setVoiceAndSpeak;
-            }
-        }
-
-        function stopSpeaking() {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
-        }
-
-        function handleReflectionSubmit(e) {
-            e.preventDefault();
-            const payload = {
-                liked: document.getElementById('reflect-liked').value,
-                hard: document.getElementById('reflect-hard').value,
-                disliked: document.getElementById('reflect-disliked').value
-            };
-
-            fetch('/api/reflection', {
+            fetch('/api/medications', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    liked: document.getElementById('reflect-liked').value,
-                    hard: document.getElementById('reflect-hard').value,
-                    disliked: document.getElementById('reflect-disliked').value
-                })
+                body: JSON.stringify({ name, time })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.error || 'Unable to save reminder right now.');
+                    return;
+                }
+
+                currentState = data.state;
+                nameEl.value = '';
+                timeEl.value = '';
+                renderPlanTab();
+            });
+        }
+
+        function toggleMedicationTaken(medId, taken) {
+            fetch('/api/medications/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: medId, taken })
             })
             .then(res => res.json())
             .then(data => {
                 currentState = data.state;
-                alert("Thank you for your feedback! Your wellness plan for next week has been updated.");
-                renderApp();
+                renderPlanTab();
             });
         }
 
-        /* --- THEME TOGGLE & ACCENT COLOR PICKER LOGIC --- */
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            
-            const themeIcon = document.getElementById('theme-icon');
-            if (themeIcon) {
-                themeIcon.innerText = newTheme === 'dark' ? '☀️' : '🌙';
+        function renderMedicationReminderList() {
+            const listEl = document.getElementById('medication-reminder-list');
+            const meds = currentState.meds || [];
+            if (!listEl) return;
+
+            if (!meds.length) {
+                listEl.innerHTML = '<p style="font-size: 16px; color: var(--text-secondary);">No reminders yet. Add one above.</p>';
+                return;
             }
+
+            listEl.innerHTML = meds.map(med => `
+                <div class="task-item" style="padding: 14px 16px; margin-bottom: 10px;">
+                    <div class="task-header" style="font-size: 17px;">
+                        <input type="checkbox" ${med.taken ? 'checked' : ''} onchange="toggleMedicationTaken('${med.id}', this.checked)">
+                        <span>${med.name} at ${med.time}</span>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // Attach Color Picker Listener on Load
-        document.addEventListener('DOMContentLoaded', () => {
-            const colorPicker = document.getElementById('accent-picker');
-            if (colorPicker) {
-                colorPicker.addEventListener('input', (e) => {
-                    const chosenColor = e.target.value;
-                    document.documentElement.style.setProperty('--primary-accent', chosenColor);
-                    document.documentElement.style.setProperty('--primary-slate', chosenColor);
-                });
+        function clearMedicationReminderTimers() {
+            reminderTimeoutIds.forEach(id => clearTimeout(id));
+            reminderTimeoutIds = [];
+        }
+
+        function scheduleMedicationReminders() {
+            clearMedicationReminderTimers();
+            const meds = currentState.meds || [];
+
+            if (window.Notification && Notification.permission === 'default') {
+                Notification.requestPermission().catch(() => {});
             }
-        });
-        // Fetch latest state when index.html loads and render the questionnaire view
-document.addEventListener('DOMContentLoaded', () => {
-    fetch('/api/state')
-        .then(res => res.json())
-        .then(data => {
-            currentState = data;
-            renderApp(); // Renders screen-onboarding when current_step is 'Onboarding'
-        })
-        .catch(err => console.error("Error fetching state on load:", err));
-});
-document.addEventListener('DOMContentLoaded', () => {
-    fetch('/api/state')
-        .then(res => res.json())
-        .then(data => {
-            currentState = data;
-            renderApp();
-        })
-        .catch(err => console.error("Error fetching initial state:", err));
-});
-    </script>
-</body>
-</html>
+
+            meds.filter(m => !m.taken).forEach(med => {
+                const target = getNextReminderDate(med.time);
+                if (!target) return;
+
+                const delay = target.getTime() - Date.now();
+                if (delay <= 0) return;
+
+                const timeoutId = setTimeout(() => {
+                    const message = `Reminder: Time to take ${med.name} (${med.time}).`;
+                    if (window.Notification && Notification.permission === 'granted') {
+                        new Notification('DailyMind Medication Reminder', { body: message });
+                    } else {
+                        alert(message);
+                    }
+                }, delay);
+
+                reminderTimeoutIds.push(timeoutId);
+            });
+        }
+
+        function getNextReminderDate(timeText) {
+            if (!timeText || !timeText.includes(':')) return null;
+            const [hourText, minuteText] = timeText.split(':');
+            const hours = Number(hourText);
+            const minutes = Number(minuteText);
+
+            if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+
+            const target = new Date();
+            target.setHours(hours, minutes, 0, 0);
+            if (target.getTime() <= Date.now()) {
+                target.setDate(target.getDate() + 1);
+            }
+            return target;
+        }
+
+        /* -------------------------------------------------------------
+           FORM VOICE INPUT (STT FOR TEXTAREAS)
+        -------------------------------------------
