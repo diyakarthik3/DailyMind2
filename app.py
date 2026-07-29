@@ -13,7 +13,18 @@ app = Flask(
 )
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
+
+def init_groq_client():
+    if not GROQ_API_KEY:
+        return None
+    try:
+        return Groq(api_key=GROQ_API_KEY)
+    except Exception as exc:
+        # Keep the web service alive even if SDK deps are incompatible in deploy env.
+        print(f"Warning: Groq client disabled at startup: {exc}")
+        return None
+
+client = init_groq_client()
 
 PORT = int(os.environ.get("PORT", 5001))
 
