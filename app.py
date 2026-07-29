@@ -37,11 +37,7 @@ state = {
     "messages": [],
     "mood_history": [],
     "journal_entries": [],
-    "meds": [
-        {"id": "med-1", "name": "Vitamin D", "time": "08:00", "taken": True},
-        {"id": "med-2", "name": "Blood Pressure", "time": "14:00", "taken": False},
-        {"id": "med-3", "name": "Calcium", "time": "20:00", "taken": False}
-    ]
+    "meds": []
 }
 
 
