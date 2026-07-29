@@ -1326,4 +1326,238 @@
 
         /* -------------------------------------------------------------
            FORM VOICE INPUT (STT FOR TEXTAREAS)
-        -------------------------------------------
+        ------------------------------------------------------------- */
+        function toggleVoiceInput(targetElementId, btnElement) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Web Speech API is not supported in this browser.');
+                return;
+            }
+
+            const targetElement = document.getElementById(targetElementId);
+            if (!targetElement) return;
+
+            if (formMicRecognition && formMicTargetId === targetElementId) {
+                formMicRecognition.stop();
+                return;
+            }
+
+            if (formMicRecognition) {
+                formMicRecognition.stop();
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                formMicRecognition = recognition;
+                formMicTargetId = targetElementId;
+                btnElement.classList.add('recording');
+                btnElement.innerText = '🛑';
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                targetElement.value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                stopVoiceInput(btnElement);
+            };
+
+            recognition.onend = () => {
+                stopVoiceInput(btnElement);
+            };
+
+            recognition.start();
+        }
+
+        function stopVoiceInput(btnElement) {
+            if (formMicRecognition) {
+                formMicRecognition = null;
+                formMicTargetId = null;
+            }
+            if (btnElement) {
+                btnElement.classList.remove('recording');
+                btnElement.innerText = '🎙️';
+            }
+        }
+
+        /* -------------------------------------------------------------
+           CHAT MIC RECOGNITION (STT FOR AI COMPANION)
+        ------------------------------------------------------------- */
+        function toggleChatMic() {
+            stopSpeaking();
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Web Speech API is not supported in this browser. Please use Chrome or Edge.');
+                return;
+            }
+
+            if (isChatListening) {
+                stopChatListening();
+                return;
+            }
+
+            chatRecognition = new SpeechRecognition();
+            chatRecognition.continuous = false;
+            chatRecognition.interimResults = true;
+            chatRecognition.lang = 'en-US';
+
+            chatRecognition.onstart = () => {
+                isChatListening = true;
+                const micBtn = document.getElementById('mic-btn');
+                if (micBtn) {
+                    micBtn.classList.add('mic-active');
+                    micBtn.innerText = '🛑';
+                }
+            };
+
+            chatRecognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                const inputField = document.getElementById('chat-msg-input');
+                if (inputField) {
+                    inputField.value = transcript;
+                }
+            };
+
+            chatRecognition.onerror = (event) => {
+                console.error('Chat Speech Recognition Error:', event.error);
+                stopChatListening();
+            };
+
+            chatRecognition.onend = () => {
+                stopChatListening();
+            };
+
+            try {
+                chatRecognition.start();
+            } catch (err) {
+                console.error('Failed to start chat speech recognition:', err);
+            }
+        }
+
+        function stopChatListening() {
+            if (chatRecognition) {
+                try { chatRecognition.abort(); } catch (err) {}
+                chatRecognition = null;
+            }
+            isChatListening = false;
+            const micBtn = document.getElementById('mic-btn');
+            if (micBtn) {
+                micBtn.classList.remove('mic-active');
+                micBtn.innerText = '🎙️';
+            }
+        }
+
+        /* -------------------------------------------------------------
+           TEXT TO SPEECH ENGINE (TTS READOUT)
+        ------------------------------------------------------------- */
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+            stopSpeaking();
+
+            const cleanText = text
+                .replace(/<[^>]*>/g, '')
+                .replace(/[\*\_#\`]/g, '')
+                .trim();
+
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.rate = 1.1;
+            utterance.pitch = 1.0;
+
+            const setVoiceAndSpeak = () => {
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find(v => 
+                    v.lang.includes('en') && (
+                        v.name.includes('Google US English') ||
+                        v.name.includes('Natural') ||
+                        v.name.includes('Samantha') ||
+                        v.name.includes('Karen') ||
+                        v.name.includes('Victoria') ||
+                        v.name.includes('Zira') ||
+                        v.name.includes('Jenny')
+                    )
+                ) || voices.find(v => v.lang.startsWith('en'));
+
+                if (preferredVoice) {
+                    utterance.voice = preferredVoice;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            };
+
+            if (window.speechSynthesis.getVoices().length !== 0) {
+                setVoiceAndSpeak();
+            } else {
+                window.speechSynthesis.onvoiceschanged = setVoiceAndSpeak;
+            }
+        }
+
+        function stopSpeaking() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function handleReflectionSubmit(e) {
+            e.preventDefault();
+            const payload = {
+                liked: document.getElementById('reflect-liked').value,
+                hard: document.getElementById('reflect-hard').value,
+                disliked: document.getElementById('reflect-disliked').value
+            };
+
+            fetch('/api/reflection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    liked: document.getElementById('reflect-liked').value,
+                    hard: document.getElementById('reflect-hard').value,
+                    disliked: document.getElementById('reflect-disliked').value
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                currentState = data.state;
+                alert("Thank you for your feedback! Your wellness plan for next week has been updated.");
+                renderApp();
+            });
+        }
+
+        /* --- THEME TOGGLE & ACCENT COLOR PICKER LOGIC --- */
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            
+            const themeIcon = document.getElementById('theme-icon');
+            if (themeIcon) {
+                themeIcon.innerText = newTheme === 'dark' ? '☀️' : '🌙';
+            }
+        }
+
+        // Attach Color Picker Listener on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            const colorPicker = document.getElementById('accent-picker');
+            if (colorPicker) {
+                colorPicker.addEventListener('input', (e) => {
+                    const chosenColor = e.target.value;
+                    document.documentElement.style.setProperty('--primary-accent', chosenColor);
+                    document.documentElement.style.setProperty('--primary-slate', chosenColor);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
