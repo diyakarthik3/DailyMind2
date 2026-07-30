@@ -287,7 +287,7 @@ def generate_routine(profile_data, feedback=None):
                 },
                 {
                     "name": f"{primary_move}",
-                    "link": "https://psychology.com/tools/positive-affirmations?utm_source=chatgpt.com",
+                    "desc": "Spending time outdoors reduces stress while refreshing both the mind and body.",
                     "link": "https://www.alltrails.com/?utm_source=chatgpt.com",
                     "completed": False
                 },
@@ -323,9 +323,9 @@ def generate_routine(profile_data, feedback=None):
                     "completed": False
                 },
                 {
-                    "name": f"Household Task {primary_task}",
+                    "name": f"Finger knitting or Crafting: {primary_task}" if primary_task else "Finger Knitting or Crafting",
                     "desc": "Completing a manageable task restores a sense of order and personal achievement.",
-                    "link": "https://www.healthline.com/health/cognitive-distortions",
+                    "link": "https://www.youtube.com/watch?v=MsZsUBYU0qU",
                     "completed": False
                 },
                 {
@@ -342,8 +342,8 @@ def generate_routine(profile_data, feedback=None):
             "bg_color": "rgba(255, 255, 255, 0.45)",
             "tasks": [
                 {
-                    "name": "Outdoor Refresh Walk",
-                    "desc": "Natural light exposure boosts serotonin production, regulating biological rhythms.",
+                    "name": "At-Home Workout",
+                    "desc": "Engaging in a home workout boosts physical fitness and mental well-being.",
                     "link": "https://www.youtube.com/watch?v=WPPPFqsECz0",
                     "completed": False
                 },
@@ -416,19 +416,19 @@ def generate_routine(profile_data, feedback=None):
                 {
                     "name": "Emotional Check-In",
                     "desc": "Accepting feelings without self-criticism prevents mental suppression and burnout.",
-                    "link": "https://www.mindful.org/",
+                    "link": "https://feelingswheel.app/",
                     "completed": False
                 },
                 {
                     "name": "Music & Sound Therapy Session",
                     "desc": "Comforting auditory rhythms lower physical agitation and release soothing neurotransmitters.",
-                    "link": "https://www.youtube.com/watch?v=WPPPFqsECz0",
+                    "link": "https://www.youtube.com/watch?v=unCya_-8ECs",
                     "completed": False
                 },
                 {
-                    "name": "Weekend Boundaries & Rest Preparation",
+                    "name": "Intention Building",
                     "desc": "Setting intentions for restful leisure creates clear psychological balance.",
-                    "link": "https://www.healthline.com/",
+                    "link": "https://www.flowstateplatform.com/tools/woop-method?utm_source=chatgpt.com",
                     "completed": False
                 }
             ]
@@ -446,20 +446,20 @@ def generate_routine(profile_data, feedback=None):
                 },
                 {
                     "name": "Learn Something New",
-                    "desc": "Stepping away from screens calms overstimulated neural pathways.",
+                    "desc": "Learning something new strengthens cognitive function and keeps the brain engaged.",
                     "link": "https://ed.ted.com/lessons?utm_source=chatgpt.com",
                     "completed": False
                 },
                 {
                     "name": "Gentle Stretch",
                     "desc": "Warmth relaxes stiff joints and improves blood circulation.",
-                    "link": "https://www.healthline.com/",
+                    "link": "https://www.youtube.com/watch?v=3cSmYMYOciI",
                     "completed": False
                 },
                 {
-                    "name": "Joyful Entertainment & Laughter",
-                    "desc": "Laughter releases natural endorphins, instantly lifting mood and decreasing tension.",
-                    "link": "https://www.helpguide.org/articles/mental-health/laughter-is-the-best-medicine.htm",
+                    "name": "Rose, Bud, Thorn Reflection",
+                    "desc": "Reflecting on the day's highlights and challenges promotes gratitude and emotional clarity.",
+                    "link": "https://www.colorado.edu/researchinnovation/rose-bud-thorn",
                     "completed": False
                 }
             ]
@@ -476,9 +476,9 @@ def generate_routine(profile_data, feedback=None):
                     "completed": False
                 },
                 {
-                    "name": "Low-Pressure Planning",
+                    "name": "Goal Builder",
                     "desc": "Structuring simple goals eliminates anticipatory anxiety for the upcoming week.",
-                    "link": "https://www.mindful.org/",
+                    "link": "https://smartgoalbuilder.com/?utm_source=chatgpt.com#builder",
                     "completed": False
                 },
                 {
@@ -490,7 +490,7 @@ def generate_routine(profile_data, feedback=None):
                 {
                     "name": "Bedtime Sleep Prep",
                     "desc": "A dark, quiet, and comfortable environment fosters restorative sleep quality.",
-                    "link": "https://www.youtube.com/watch?v=aEqlQv71mI0",
+                    "link": "https://www.youtube.com/watch?v=pdJ9BFsLK-M",
                     "completed": False
                 }
             ]
@@ -731,5 +731,5 @@ if __name__ == '__main__':
         port=PORT,
         debug=debug_mode,
         load_dotenv=False,
-        use_reloader=False
+        use_reloader=debug_mode
     )
