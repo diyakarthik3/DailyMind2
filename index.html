@@ -238,6 +238,59 @@
             font-weight: 700;
         }
 
+        .label-with-voice {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .voice-btn {
+            border: 1px solid var(--glass-border);
+            background: var(--glass-bg-strong);
+            color: var(--text-main);
+            border-radius: 999px;
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .voice-icon {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+        }
+
+        .voice-icon svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            fill: currentColor;
+        }
+
+        .voice-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+        }
+
+        .voice-btn.is-listening {
+            background: linear-gradient(135deg, var(--primary-accent), var(--primary-accent-2));
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .voice-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         input[type="text"],
         input[type="time"],
         textarea,
@@ -508,9 +561,14 @@
 
         .med-grid {
             display: grid;
-            grid-template-columns: 1.2fr 180px auto;
+            grid-template-columns: 1.2fr auto 180px auto;
             gap: 10px;
             margin-bottom: 10px;
+        }
+
+        .medication-voice-btn {
+            position: relative;
+            top: 4px;
         }
 
         .section-title {
@@ -633,7 +691,22 @@
                         </div>
 
                         <div class="form-group full-width">
-                            <label for="onboarding-challenges">3. What emotional or mental challenges are you facing?</label>
+                            <div class="label-with-voice">
+                                <label for="onboarding-challenges">3. What emotional or mental challenges are you facing?</label>
+                                <button
+                                    type="button"
+                                    class="voice-btn"
+                                    onclick="toggleVoiceInput('onboarding-challenges', this)"
+                                    aria-label="Use voice input for emotional or mental challenges"
+                                    title="Use voice input"
+                                >
+                                    <span class="voice-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                            <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                            </div>
                             <textarea id="onboarding-challenges" rows="3" placeholder="e.g. Anxiety, low motivation, poor sleep"></textarea>
                         </div>
 
@@ -657,7 +730,22 @@
                         </div>
 
                         <div class="form-group full-width">
-                            <label for="onboarding-hobbies">6. Favorite hobbies</label>
+                            <div class="label-with-voice">
+                                <label for="onboarding-hobbies">6. Favorite hobbies</label>
+                                <button
+                                    type="button"
+                                    class="voice-btn"
+                                    onclick="toggleVoiceInput('onboarding-hobbies', this)"
+                                    aria-label="Use voice input for favorite hobbies"
+                                    title="Use voice input"
+                                >
+                                    <span class="voice-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                            <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
+                                        </svg>
+                                    </span>
+                                </button>
+                            </div>
                             <textarea id="onboarding-hobbies" rows="3" placeholder="e.g. Reading, painting, music"></textarea>
                         </div>
                     </div>
@@ -677,7 +765,6 @@
                 <button class="tab-btn active" type="button" data-tab="daily-plan" onclick="setActiveTab('daily-plan')">Daily Plan</button>
                 <button class="tab-btn" type="button" data-tab="ai-companion" onclick="setActiveTab('ai-companion')">AI Companion</button>
                 <button class="tab-btn" type="button" data-tab="dashboard" onclick="setActiveTab('dashboard')">Dashboard</button>
-                <button class="tab-btn" type="button" data-tab="journal" onclick="setActiveTab('journal')">Journal</button>
                 <button class="tab-btn" type="button" data-tab="caregiver" onclick="setActiveTab('caregiver')">Caregiver</button>
             </div>
 
@@ -703,6 +790,19 @@
                     <h4 class="medication-title">Medication Reminders</h4>
                     <div class="med-grid">
                         <input id="medication-name-input" type="text" placeholder="Medication name">
+                        <button
+                            type="button"
+                            class="voice-btn medication-voice-btn"
+                            onclick="toggleVoiceInput('medication-name-input', this)"
+                            aria-label="Use voice input for medication name"
+                            title="Use voice input"
+                        >
+                            <span class="voice-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
+                                </svg>
+                            </span>
+                        </button>
                         <input id="medication-time-input" type="time">
                         <button type="button" class="btn btn-primary" onclick="addMedicationReminder()">Add</button>
                     </div>
@@ -718,6 +818,19 @@
                     <div id="chat-box" class="chat-box"></div>
                     <div class="chat-input-row">
                         <input type="text" id="chat-msg-input" placeholder="Type your message" onkeypress="if(event.key==='Enter'){sendChatMessage();}">
+                        <button
+                            type="button"
+                            class="voice-btn"
+                            onclick="toggleVoiceInput('chat-msg-input', this)"
+                            aria-label="Use voice input for AI companion"
+                            title="Use voice input"
+                        >
+                            <span class="voice-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                    <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
+                                </svg>
+                            </span>
+                        </button>
                         <button class="btn btn-primary" type="button" onclick="sendChatMessage()">Send</button>
                     </div>
                 </div>
@@ -746,17 +859,6 @@
                 </div>
             </div>
 
-            <div id="tab-journal" class="tab-content hidden">
-                <div class="glass-card">
-                    <div class="section-title">Journal</div>
-                    <p class="section-copy">Capture your thoughts to build emotional awareness over time.</p>
-
-                    <textarea id="journal-input" rows="6" placeholder="Write your reflection here"></textarea>
-                    <button class="btn btn-primary" style="margin-top: 10px;" type="button" onclick="saveJournalEntry()">Save Entry</button>
-                    <div id="journal-response" style="margin-top: 10px;"></div>
-                </div>
-            </div>
-
             <div id="tab-caregiver" class="tab-content hidden">
                 <div class="glass-card">
                     <div class="section-title">Caregiver Overview</div>
@@ -782,15 +884,60 @@
 
                 <form id="reflection-form" class="reflection-form" onsubmit="handleReflectionSubmit(event)">
                     <div class="form-group">
-                        <label for="reflect-liked">What worked best this week?</label>
+                        <div class="label-with-voice">
+                            <label for="reflect-liked">What worked best this week?</label>
+                            <button
+                                type="button"
+                                class="voice-btn"
+                                onclick="toggleVoiceInput('reflect-liked', this)"
+                                aria-label="Use voice input for what worked best"
+                                title="Use voice input"
+                            >
+                                <span class="voice-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                        <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
                         <textarea id="reflect-liked" rows="3" placeholder="Share what you enjoyed"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="reflect-hard">What was difficult to maintain?</label>
+                        <div class="label-with-voice">
+                            <label for="reflect-hard">What was difficult to maintain?</label>
+                            <button
+                                type="button"
+                                class="voice-btn"
+                                onclick="toggleVoiceInput('reflect-hard', this)"
+                                aria-label="Use voice input for what was difficult"
+                                title="Use voice input"
+                            >
+                                <span class="voice-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                        <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
                         <textarea id="reflect-hard" rows="3" placeholder="Share what felt hard"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="reflect-disliked">Anything you want to change next week?</label>
+                        <div class="label-with-voice">
+                            <label for="reflect-disliked">Anything you want to change next week?</label>
+                            <button
+                                type="button"
+                                class="voice-btn"
+                                onclick="toggleVoiceInput('reflect-disliked', this)"
+                                aria-label="Use voice input for changes next week"
+                                title="Use voice input"
+                            >
+                                <span class="voice-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                                        <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 1 2 0 7 7 0 0 1-6 6.93V21h2a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2h2v-2.07A7 7 0 0 1 5 12a1 1 0 1 1 2 0 5 5 0 0 0 10 0Z"/>
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
                         <textarea id="reflect-disliked" rows="3" placeholder="Share what to adjust"></textarea>
                     </div>
                     <button class="btn btn-primary" type="submit" style="margin-top: 8px;">Submit Reflection</button>
@@ -804,12 +951,191 @@
         let trendChart = null;
         let reminderTimeoutIds = [];
         let activeTab = "daily-plan";
+        let speechRecognitionCtor = null;
+        let activeVoiceRecognition = null;
+        let activeVoiceButton = null;
+        let preferredSpeechVoice = null;
+        let activeSpeechSessionId = 0;
+
+        const TTS_PROFILE = {
+            baseRate: 0.92,
+            basePitch: 1.1,
+            volume: 1,
+            questionPitchLift: 0.04,
+            emphasisPitchLift: 0.025,
+            commaPitchDip: 0.02,
+            thoughtEndPitchDrop: 0.035
+        };
 
         document.addEventListener("DOMContentLoaded", () => {
             applyStoredThemeAndAccent();
             bindThemeControls();
+            initVoiceInput();
+            initSpeechVoice();
             fetchState();
         });
+
+        function initSpeechVoice() {
+            if (!window.speechSynthesis) {
+                return;
+            }
+
+            const pickVoice = () => {
+                const voices = window.speechSynthesis.getVoices();
+                preferredSpeechVoice = voices.find(voice => /samantha|ava|victoria|allison|google\s+us\s+english/i.test(voice.name))
+                    || voices.find(voice => /neural|natural|enhanced|premium/i.test(voice.name))
+                    || voices.find(voice => voice.localService && voice.lang && voice.lang.toLowerCase().startsWith("en-us"))
+                    || voices.find(voice => voice.lang && voice.lang.toLowerCase().startsWith("en-us"))
+                    || null;
+            };
+
+            pickVoice();
+            window.speechSynthesis.onvoiceschanged = pickVoice;
+        }
+
+        function buildNaturalSpeechText(text) {
+            return String(text || "")
+                .replace(/\((API Notice:.*?)\)/gi, "")
+                .replace(/\bAI\b/gi, "A I")
+                .replace(/\s+/g, " ")
+                .replace(/\s*([,.;!?])\s*/g, "$1 ")
+                .replace(/\s{2,}/g, " ")
+                .trim();
+        }
+
+        function splitSpeechSegments(text) {
+            const sentenceChunks = text.match(/[^.!?]+[.!?]?/g) || [text];
+            const segments = [];
+
+            sentenceChunks.forEach((chunk) => {
+                const trimmed = chunk.trim();
+                if (!trimmed) {
+                    return;
+                }
+
+                if (!segments.length) {
+                    segments.push(trimmed);
+                    return;
+                }
+
+                const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+                const previous = segments[segments.length - 1];
+
+                // Merge short follow-up sentences so delivery stays fluid, not choppy.
+                if (wordCount <= 8 || previous.split(/\s+/).length <= 8) {
+                    const connector = /[,.!?]$/.test(previous) ? " " : ", ";
+                    segments[segments.length - 1] = `${previous}${connector}${trimmed}`;
+                } else {
+                    segments.push(trimmed);
+                }
+            });
+
+            return segments.map((content, index) => {
+                const punctuationMatch = content.match(/[.!?]$/);
+                const punctuation = punctuationMatch ? punctuationMatch[0] : "";
+                return {
+                    content,
+                    punctuation,
+                    // Keep phrases connected; only full-stop on periods.
+                    pauseMs: punctuation === "." ? 220 : 60
+                };
+            });
+        }
+
+        function initVoiceInput() {
+            speechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+
+            if (speechRecognitionCtor) {
+                return;
+            }
+
+            document.querySelectorAll(".voice-btn").forEach(button => {
+                button.disabled = true;
+                button.title = "Voice input is not supported in this browser.";
+            });
+        }
+
+        function resetActiveVoiceButton() {
+            if (!activeVoiceButton) {
+                return;
+            }
+            activeVoiceButton.classList.remove("is-listening");
+            activeVoiceButton.removeAttribute("aria-pressed");
+            activeVoiceButton.title = "Use voice input";
+            activeVoiceButton = null;
+        }
+
+        function toggleVoiceInput(fieldId, triggerButton) {
+            if (!speechRecognitionCtor) {
+                alert("Voice input is not supported in this browser. Please use Chrome or Edge.");
+                return;
+            }
+
+            if (activeVoiceRecognition && activeVoiceButton === triggerButton) {
+                activeVoiceRecognition.stop();
+                return;
+            }
+
+            if (activeVoiceRecognition) {
+                activeVoiceRecognition.stop();
+            }
+
+            const targetField = document.getElementById(fieldId);
+            if (!targetField) {
+                return;
+            }
+
+            const recognition = new speechRecognitionCtor();
+            recognition.lang = "en-US";
+            recognition.interimResults = true;
+            recognition.continuous = true;
+
+            const baseText = targetField.value.trim();
+
+            triggerButton.classList.add("is-listening");
+            triggerButton.setAttribute("aria-pressed", "true");
+            triggerButton.title = "Stop voice input";
+            activeVoiceButton = triggerButton;
+            activeVoiceRecognition = recognition;
+
+            recognition.onresult = (event) => {
+                let finalTranscript = "";
+                let interimTranscript = "";
+
+                for (let i = 0; i < event.results.length; i += 1) {
+                    const spokenText = event.results[i][0].transcript.trim();
+                    if (!spokenText) {
+                        continue;
+                    }
+                    if (event.results[i].isFinal) {
+                        finalTranscript += `${spokenText} `;
+                    } else {
+                        interimTranscript += `${spokenText} `;
+                    }
+                }
+
+                const composedText = [
+                    baseText,
+                    finalTranscript.trim(),
+                    interimTranscript.trim()
+                ].filter(Boolean).join(" ");
+
+                targetField.value = composedText;
+                targetField.dispatchEvent(new Event("input", { bubbles: true }));
+            };
+
+            recognition.onerror = () => {
+                activeVoiceRecognition = null;
+                resetActiveVoiceButton();
+            };
+
+            recognition.onend = () => {
+                activeVoiceRecognition = null;
+                resetActiveVoiceButton();
+            };
+
+            recognition.start();
+        }
 
         function bindThemeControls() {
             const toggle = document.getElementById("theme-toggle");
@@ -1216,6 +1542,10 @@
                 return;
             }
 
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+
             input.value = "";
             const chatBox = document.getElementById("chat-box");
             chatBox.innerHTML += `<div class="chat-msg user">${text}</div>`;
@@ -1230,7 +1560,75 @@
             .then(data => {
                 currentState.messages = data.messages;
                 renderChatMessages();
+                const latestAssistant = [...(data.messages || [])].reverse().find(msg => msg.role === "assistant");
+                if (latestAssistant && latestAssistant.content) {
+                    speakAssistantResponse(latestAssistant.content);
+                }
             });
+        }
+
+        function speakAssistantResponse(text) {
+            if (!window.speechSynthesis) {
+                return;
+            }
+
+            const cleanText = buildNaturalSpeechText(text);
+            if (!cleanText) {
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+            activeSpeechSessionId += 1;
+            const sessionId = activeSpeechSessionId;
+
+            const segments = splitSpeechSegments(cleanText).slice(0, 8);
+            if (!segments.length) {
+                return;
+            }
+
+            const speakSegment = (index) => {
+                if (sessionId !== activeSpeechSessionId || index >= segments.length) {
+                    return;
+                }
+
+                const segment = segments[index];
+                const utterance = new SpeechSynthesisUtterance(segment.content);
+                utterance.lang = "en-US";
+
+                if (preferredSpeechVoice) {
+                    utterance.voice = preferredSpeechVoice;
+                }
+
+                const wordCount = segment.content.split(/\s+/).filter(Boolean).length;
+                const isQuestion = segment.punctuation === "?";
+                const isLast = index === segments.length - 1;
+                const emphasis = /\b(you|your|safe|calm|breathe|breathing|today|now|gently|support|important)\b/i.test(segment.content);
+                const commaCount = (segment.content.match(/,/g) || []).length;
+
+                const smoothRateOffset = Math.max(-0.006, Math.min(0.01, (wordCount - 14) * 0.0008));
+                const cadenceDrop = isLast ? -0.008 : 0;
+                utterance.rate = Math.max(0.88, Math.min(0.99, TTS_PROFILE.baseRate + smoothRateOffset + cadenceDrop));
+
+                const expressiveSwing = index % 2 === 0 ? 0.008 : 0;
+                const pitchBoost = (isQuestion ? TTS_PROFILE.questionPitchLift : 0)
+                    + (emphasis ? TTS_PROFILE.emphasisPitchLift : 0)
+                    + expressiveSwing;
+                const commaDip = Math.min(0.05, commaCount * TTS_PROFILE.commaPitchDip);
+                const thoughtEndDrop = isLast || segment.punctuation === "." ? TTS_PROFILE.thoughtEndPitchDrop : 0;
+                utterance.pitch = Math.max(
+                    0.98,
+                    Math.min(1.16, TTS_PROFILE.basePitch + pitchBoost - commaDip - thoughtEndDrop)
+                );
+                utterance.volume = TTS_PROFILE.volume;
+
+                utterance.onend = () => {
+                    setTimeout(() => speakSegment(index + 1), segment.pauseMs);
+                };
+
+                window.speechSynthesis.speak(utterance);
+            };
+
+            speakSegment(0);
         }
 
         function renderChatMessages() {

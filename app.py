@@ -41,6 +41,142 @@ state = {
 }
 
 
+def build_fallback_chat_response(user_msg, profile, messages):
+    """Return a warm, contextual response when the LLM is unavailable."""
+    text = str(user_msg or "").strip()
+    lowered = text.lower()
+
+    def has_word(haystack, word):
+        return bool(re.search(rf"\b{re.escape(word)}\b", haystack))
+
+    def has_any_words(haystack, words):
+        return any(has_word(haystack, word) for word in words)
+
+    challenges = str(profile.get("challenges", "")).strip()
+    mood = str(profile.get("mood", "Neutral")).strip() or "Neutral"
+
+    if not text:
+        return "I am here with you. What is on your mind right now?"
+
+    if has_any_words(lowered, ["hi", "hello", "hey"]):
+        return "I am glad you are here. How are you feeling in this moment?"
+
+    if has_any_words(lowered, ["thank", "thanks"]):
+        return "You are very welcome. What feels most important for us to focus on next?"
+
+    assistant_messages = [m for m in (messages or []) if m.get("role") == "assistant"]
+    last_assistant = str(assistant_messages[-1].get("content", "")).strip() if assistant_messages else ""
+
+    user_messages = [m for m in (messages or []) if m.get("role") == "user"]
+    turn_number = len(user_messages)
+    recent_user_context = " ".join(
+        str(m.get("content", "")).lower() for m in user_messages[-4:]
+    )
+
+    asks_for_tip = any(
+        phrase in lowered
+        for phrase in [
+            "tip",
+            "tips",
+            "advice",
+            "guidance",
+            "suggest",
+            "recommend",
+            "help me",
+            "what should i do",
+            "how do i",
+            "how to",
+            "what can i do"
+        ]
+    )
+
+    asks_for_more_help = any(
+        phrase in lowered
+        for phrase in ["more", "another", "else", "further", "continue"]
+    ) and asks_for_tip
+
+    if asks_for_more_help:
+        return (
+            "Yes. Here is another gentle option: do 4 rounds of box breathing, "
+            "then write one supportive sentence to yourself like I am safe right now. "
+            "Would you like a short morning routine too?"
+        )
+
+    if asks_for_tip and any(word in recent_user_context for word in ["sad", "down", "anxious", "stress", "worried"]):
+        return (
+            "I can help with that. Try this now: place one hand on your chest, take 5 slow breaths, "
+            "then do one small comforting action like warm tea or a short walk. "
+            "Would you like a 2 minute plan or a 10 minute plan?"
+        )
+
+    if asks_for_tip:
+        return (
+            "Absolutely. A simple next step is to pick one tiny action you can finish in 5 minutes, "
+            "then check in with your body and mood after. "
+            "Would you like me to suggest one based on how you feel right now?"
+        )
+
+    short_response = len(text.split()) <= 4
+    short_topic = text.rstrip(".,!?;:")
+
+    if short_response and has_any_words(lowered, ["breathing", "breath"]):
+        return (
+            "Great choice. Try this with me now: inhale for 4, hold for 4, exhale for 6, and repeat 5 times. "
+            "After that, tell me if your body feels even a little calmer."
+        )
+
+    if short_response and "comfort" in last_assistant.lower():
+        return (
+            f"{short_topic.capitalize()} can be a real source of comfort. "
+            "Would you like to make that your support step for today, and pair it with a short breathing break?"
+        )
+
+    if short_response and "next hour" in last_assistant.lower():
+        return (
+            f"That is a good choice. Let us make it gentle and doable: start with {short_topic.lower()} for 10 minutes, "
+            "then pause and notice if your mood feels even slightly lighter."
+        )
+
+    topic_prompts = [
+        (["anxious", "anxiety", "worried", "stress", "overwhelm"],
+         "That sounds really heavy. Would a 2 minute breathing reset feel doable right now, or would you rather talk it through first?"),
+        (["sad", "down", "depressed", "hopeless"],
+         "Thank you for sharing that with me. What is one small thing that usually gives you even a little comfort?"),
+        (["angry", "frustrated", "irritated"],
+         "I hear the frustration. What happened today that felt hardest to handle?"),
+        (["sleep", "tired", "exhausted", "fatigue"],
+         "Low energy can make everything harder. Would it help to choose one gentle task for the next hour together?"),
+        (["lonely", "alone", "isolated"],
+         "Feeling alone can be painful. Is there one person you would feel okay checking in with today?"),
+        (["pain", "hurt", "ache"],
+         "I am sorry you are dealing with that discomfort. Would you like to adjust today to gentler activities?"),
+    ]
+
+    for keywords, response in topic_prompts:
+        if has_any_words(lowered, keywords):
+            return response
+
+    response_options = []
+
+    if challenges:
+        response_options.append(
+            f"I hear you. Since you mentioned {challenges} earlier, how is that showing up for you right now?"
+        )
+
+    response_options.extend([
+        "Thank you for telling me that. What part of this feels hardest at the moment?",
+        "I am with you. If we focused on just one small next step, what would feel most doable?",
+        f"You seem to be feeling {mood.lower()} today. What kind of support would feel best right now?"
+    ])
+
+    response = response_options[(turn_number - 1) % len(response_options)]
+
+    if last_assistant and response == last_assistant:
+        response = "I hear you. What is one thing you need most right now: calm, energy, or encouragement?"
+
+    return response
+
+
 def normalize_medication(item):
     """Normalize legacy and new med entries into one stable API shape."""
     med_name = str(item.get("name") or item.get("Medicine") or "").strip()
@@ -595,7 +731,7 @@ def toggle_medication():
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.json or {}
-    user_msg = data.get("message", "")
+    user_msg = str(data.get("message", "")).strip()
 
     if user_msg:
         state["messages"].append({"role": "user", "content": user_msg})
@@ -604,7 +740,6 @@ def chat():
         try:
             profile = state.get("user_profile", {})
             challenges = profile.get("challenges", "general stress and daily balance")
-            hobbies = profile.get("hobbies", "their favorite hobbies")
             mood = profile.get("mood", "Neutral")
 
             system_prompt = {
@@ -628,14 +763,10 @@ def chat():
             )
             ai_response = completion.choices[0].message.content
         except Exception as e:
-            ai_response = f"I am here with you and listening. How are you feeling right now? (API Notice: {str(e)})"
+            print(f"Error in chat completion: {e}")
+            ai_response = build_fallback_chat_response(user_msg, state.get("user_profile", {}), state.get("messages", []))
     else:
-        profile = state.get("user_profile", {})
-        challenges = profile.get("challenges", "")
-        if challenges:
-            ai_response = f"I hear you and understand. How are you holding up with {challenges} today?"
-        else:
-            ai_response = "I am listening and here with you. How can I support you today?"
+        ai_response = build_fallback_chat_response(user_msg, state.get("user_profile", {}), state.get("messages", []))
 
     state["messages"].append({"role": "assistant", "content": ai_response})
     return jsonify({"success": True, "messages": state["messages"]})
