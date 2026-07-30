@@ -3,346 +3,398 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DailyMind — Welcome</title>
+    <title>DailyMind - Wellness Hub</title>
     <style>
         :root {
-            /* Cool-toned, neutral gradient background */
-            --bg-gradient: linear-gradient(135deg, #7b8cc4 0%, #a4b3d6 35%, #c5d1e8 70%, #e2e8f0 100%);
+            --bg-a: #edf2ff;
+            --bg-b: #dce6fe;
+            --bg-c: #cddaff;
+            --text-main: #17223d;
+            --text-sub: #4b5d7d;
+            --primary-accent: #312f89;
+            --primary-accent-hover: #2a2878;
+            --glass-bg: rgba(245, 248, 255, 0.56);
+            --glass-border-color: rgba(255, 255, 255, 0.65);
+            --glass-shadow: 0 18px 40px rgba(37, 55, 100, 0.12);
+            --control-bg: rgba(244, 248, 255, 0.62);
+            --control-pill: rgba(255, 255, 255, 0.74);
+            --control-text: #1f2a47;
+            --surface-card: rgba(255, 255, 255, 0.58);
+        }
 
-            --glass-bg: rgba(255, 255, 255, 0.4);
-            --glass-border: 1px solid rgba(255, 255, 255, 0.65);
-            --glass-shadow: 0 16px 40px 0 rgba(30, 41, 59, 0.12);
-            
-            --text-main: #0f172a;
-            --text-sub: #334155;
-            --primary-accent: #3b5284;
-            --primary-accent-hover: #2d3f66;
+        [data-theme="dark"] {
+            --bg-a: #0c1324;
+            --bg-b: #15203a;
+            --bg-c: #1f2f4f;
+            --text-main: #f8fbff;
+            --text-sub: #cbd8ee;
+            --primary-accent: #7f8cff;
+            --primary-accent-hover: #6a78ef;
+            --glass-bg: rgba(17, 26, 47, 0.66);
+            --glass-border-color: rgba(255, 255, 255, 0.14);
+            --glass-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+            --control-bg: rgba(17, 26, 47, 0.62);
+            --control-pill: rgba(11, 18, 35, 0.7);
+            --control-text: #f8fbff;
+            --surface-card: rgba(19, 31, 56, 0.76);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
         }
 
-       body {
-            background: var(--bg-gradient);
-            background-attachment: fixed;
+        body {
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
+            background: radial-gradient(circle at 20% 16%, rgba(255, 255, 255, 0.55), transparent 44%),
+                        radial-gradient(circle at 88% 86%, rgba(255, 255, 255, 0.28), transparent 36%),
+                        linear-gradient(145deg, var(--bg-a), var(--bg-b) 46%, var(--bg-c));
             color: var(--text-main);
-            overflow: hidden;
-            position: relative;
-        }
-
-/* Desktop Container (Fixed Dead-Center) */
-        .desktop-container {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 520px;
-            z-index: 10;
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 110px 32px 32px;
+            transition: all 0.3s ease;
         }
 
-        /* Ensure main card takes full container width */
-        .glass-card {
+        .scene {
+            width: min(1180px, 100%);
+        }
+
+        .control-bar {
+            position: fixed;
+            top: 18px;
+            right: 22px;
+            z-index: 20;
+            display: flex;
+            gap: 7px;
+            padding: 8px;
+            border-radius: 18px;
+            background: var(--control-bg);
+            border: 1px solid var(--glass-border-color);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: var(--glass-shadow);
+            width: max-content;
+        }
+
+        .control-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 999px;
+            border: 1px solid var(--glass-border-color);
+            background: var(--control-pill);
+            color: var(--control-text);
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle {
+            width: 40px;
+            height: 22px;
+            border-radius: 999px;
+            border: 1px solid var(--glass-border-color);
+            background: rgba(255, 255, 255, 0.57);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary-accent);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] .theme-toggle::after {
+            transform: translateX(18px);
+        }
+
+        #accent-picker {
+            width: 18px;
+            height: 18px;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .layout {
             width: 100%;
+            display: flex;
+            justify-content: center;
         }
 
         .glass-card {
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: var(--glass-border);
-            border-radius: 32px;
+            border: 1px solid var(--glass-border-color);
+            border-radius: 24px;
             box-shadow: var(--glass-shadow);
-            padding: 48px 40px;
-            text-align: center;
+            padding: 34px 36px;
+            width: min(920px, 96vw);
+            transition: all 0.3s ease;
         }
 
-        h1 {
-            color: var(--text-main);
-            font-size: 36px;
-            font-weight: 800;
-            margin-bottom: 12px;
-            letter-spacing: -0.5px;
+        .hero-title {
+            font-family: "Avenir Next", "Manrope", "Segoe UI", sans-serif;
+            font-size: clamp(60px, 5.8vw, 82px);
+            line-height: 1.02;
+            letter-spacing: 0.1px;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
 
-        p {
+        .lead {
+            font-family: "Avenir Next", "Manrope", "Segoe UI", sans-serif;
+            font-size: 24px;
+            line-height: 1.3;
+            font-style: italic;
+            font-weight: 400;
+            letter-spacing: 0.1px;
             color: var(--text-sub);
-            font-size: 18px;
-            line-height: 1.5;
-            margin-bottom: 36px;
-        }
-
-        .feature-box {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-bottom: 40px;
-            text-align: left;
-        }
-
-        .feature-item {
-            background: rgba(255, 255, 255, 0.35);
-            padding: 14px 20px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            color: var(--text-main);
-            font-size: 15px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .feature-item span {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--primary-accent);
+            margin-bottom: 30px;
+            max-width: 48ch;
         }
 
         .btn-start {
-            display: block;
-            width: 100%;
-            padding: 18px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            border: none;
+            border-radius: 13px;
             background: var(--primary-accent);
             color: #ffffff;
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 700;
-            border: none;
-            border-radius: 20px;
+            padding: 10px 20px;
             cursor: pointer;
-            box-shadow: 0 8px 20px rgba(45, 63, 102, 0.25);
-            transition: all 0.2s ease;
-            text-decoration: none;
+            box-shadow: 0 8px 16px rgba(45, 63, 102, 0.24);
+            transition: all 0.3s ease;
+            margin-bottom: 14px;
         }
 
         .btn-start:hover {
             background: var(--primary-accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(45, 63, 102, 0.35);
+            transform: translateY(-1px);
         }
 
-        .btn-start:active {
-            transform: translateY(0);
+        .feature-box {
+            display: grid;
+            gap: 10px;
         }
 
-        /* --- LARGER FLOATING BACKGROUND CARDS --- */
-       .bg-card-field {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .card-float {
-            position: absolute;
-            width: 340px; /* Expanded width */
-            padding: 22px 24px;
-            border-radius: 24px;
-            background: rgba(255, 255, 255, 0.38);
-            border: 1px solid rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08);
-            opacity: 0;
+        .feature-item {
             display: flex;
-            gap: 18px;
             align-items: center;
-        }
-
-        /* Black and White Clipart Image Styling */
-        /* Black and White Clipart Image Styling */
-       /* Black and White Clipart Image Styling */
-     /* Black and White Clipart Image Styling */
-        .card-illustration {
-            width: 52px;
-            height: 52px;
-            object-fit: contain;
-            flex-shrink: 0;
-            
-            /* Removes white backgrounds from PNGs/JPGs */
-            mix-blend-mode: multiply; 
-            
-            /* Prevents broken alt text from showing through */
-            color: transparent;
-            font-size: 0;
-        }
-        .card-content {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .card-time {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--primary-accent);
-        }
-
-        .card-title {
-            font-size: 16px;
+            gap: 10px;
+            background: var(--surface-card);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 13px;
+            padding: 12px 13px;
+            font-size: 14px;
             font-weight: 700;
             color: var(--text-main);
-            line-height: 1.35;
+            transition: all 0.3s ease;
         }
 
-        .card-tag {
-            align-self: flex-start;
-            margin-top: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.55);
+        .feature-item span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-accent);
+            box-shadow: 0 0 0 4px rgba(61, 65, 143, 0.15);
+            flex-shrink: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card {
+            background: var(--surface-card);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 13px;
+            padding: 12px 14px;
+        }
+
+        .stat-card h4 {
+            font-size: 12px;
             color: var(--text-sub);
+            margin-bottom: 4px;
+            font-weight: 700;
         }
 
-        /* Position & Floating Animations */
-        .card-tl {
-            top: 6%;
-            left: 3%;
-            transform: rotate(-8deg);
-            animation: popAndDriftTL 10s ease-in-out infinite alternate 0.2s;
+        .stat-card p {
+            font-size: 39px;
+            line-height: 1;
+            color: var(--primary-accent);
+            font-weight: 800;
         }
 
-        .card-tr {
-            top: 8%;
-            right: 3%;
-            transform: rotate(6deg);
-            animation: popAndDriftTR 12s ease-in-out infinite alternate 0.5s;
+        .stats-note {
+            color: var(--text-sub);
+            font-size: 14px;
+            line-height: 1.45;
         }
 
-        .card-bl {
-            bottom: 6%;
-            left: 4%;
-            transform: rotate(5deg);
-            animation: popAndDriftBL 11s ease-in-out infinite alternate 0.8s;
+        @media (max-width: 980px) {
+            .layout {
+                max-width: 640px;
+            }
+
+            .control-bar {
+                top: 12px;
+                right: 12px;
+            }
+
+            .scene {
+                max-width: 640px;
+            }
         }
 
-        .card-br {
-            bottom: 6%;
-            right: 3%;
-            transform: rotate(-6deg);
-            animation: popAndDriftBR 9s ease-in-out infinite alternate 0.3s;
-        }
+        @media (max-width: 720px) {
+            body {
+                padding: 18px 12px;
+                align-items: start;
+            }
 
-        @keyframes popAndDriftTL {
-            0% { opacity: 0; transform: rotate(-8deg) scale(0.8) translateY(30px); }
-            20% { opacity: 0.85; transform: rotate(-8deg) scale(1) translateY(0); }
-            100% { opacity: 0.85; transform: rotate(-4deg) scale(1.02) translateY(-25px) translateX(15px); }
-        }
+            .glass-card {
+                padding: 24px 18px;
+                width: 100%;
+            }
 
-        @keyframes popAndDriftTR {
-            0% { opacity: 0; transform: rotate(6deg) scale(0.8) translateY(30px); }
-            20% { opacity: 0.85; transform: rotate(6deg) scale(1) translateY(0); }
-            100% { opacity: 0.85; transform: rotate(9deg) scale(1.02) translateY(-20px) translateX(-18px); }
-        }
+            .btn-start {
+                width: 100%;
+                font-size: 16px;
+            }
 
-        @keyframes popAndDriftBL {
-            0% { opacity: 0; transform: rotate(5deg) scale(0.8) translateY(30px); }
-            20% { opacity: 0.85; transform: rotate(5deg) scale(1) translateY(0); }
-            100% { opacity: 0.85; transform: rotate(2deg) scale(1.02) translateY(-22px) translateX(12px); }
-        }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
 
-        @keyframes popAndDriftBR {
-            0% { opacity: 0; transform: rotate(-6deg) scale(0.8) translateY(30px); }
-            20% { opacity: 0.85; transform: rotate(-6deg) scale(1) translateY(0); }
-            100% { opacity: 0.85; transform: rotate(-10deg) scale(1.02) translateY(-28px) translateX(-14px); }
-        }
+            .lead {
+                font-size: 16px;
+            }
 
-        @media (max-width: 1024px) {
-            .bg-card-field {
-                display: none;
+            .hero-title {
+                font-size: clamp(44px, 9vw, 58px);
+                letter-spacing: 0.2px;
             }
         }
     </style>
 </head>
 <body>
-<div class="bg-card-field">
-        <div class="card-float card-tl">
-            <img class="card-illustration" src="/images/yoga.png" alt="">
-            <div class="card-content">
-                <div class="card-time">8:00 AM • Morning</div>
-                <div class="card-title">Daily Breathwork & Yoga Stretch</div>
-                <div class="card-tag">Mindfulness</div>
+    <div class="scene">
+        <div class="control-bar">
+            <div class="control-pill">
+                <span id="theme-label">Light</span>
+                <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle theme"></button>
+            </div>
+            <div class="control-pill">
+                <span>Accent</span>
+                <input id="accent-picker" type="color" value="#312f89" aria-label="Pick accent color">
             </div>
         </div>
 
-        <div class="card-float card-tr">
-            <img class="card-illustration" src="/images/meditation.png" alt="">
-            <div class="card-content">
-                <div class="card-time">12:30 PM • Afternoon</div>
-                <div class="card-title">Mindfulness Breathing</div>
-                <div class="card-tag">Rest & Reset</div>
-            </div>
-        </div>
+        <div class="layout">
+            <div class="glass-card">
+                <h1 class="hero-title">DailyMind</h1>
+                <p class="lead">Better days start with better minds.</p>
 
-        <div class="card-float card-bl">
-            <img class="card-illustration" src="/images/family.png" alt="">
-            <div class="card-content">
-                <div class="card-time">5:00 PM • Evening</div>
-                <div class="card-title">Family Walk & Outdoor Time</div>
-                <div class="card-tag">Physical</div>
-            </div>
-        </div>
+                <button class="btn-start" onclick="startApp()">Get Started</button>
 
-        <div class="card-float card-br">
-            <img class="card-illustration" src="/images/journal.png" alt="">
-            <div class="card-content">
-                <div class="card-time">9:00 PM • Night</div>
-                <div class="card-title">Reflection & Gratitude Journaling</div>
-                <div class="card-tag">Wellness</div>
+                <div class="feature-box">
+                    <div class="feature-item"><span></span>Adaptive daily plans powered by your input</div>
+                    <div class="feature-item"><span></span>Medication reminders and mood tracking</div>
+                    <div class="feature-item"><span></span>AI support, trends, and caregiver visibility</div>
+                </div>
             </div>
-        </div>
-    </div>
-
-    <div class="desktop-container">
-        <div class="glass-card">
-            <h1>Welcome to DailyMind</h1>
-            <p>Better days begin with a better mind.</p>
-            <div class="feature-box">
-                <div class="feature-item"><span></span> Personalized Routines</div>
-                <div class="feature-item"><span></span> AI Voice Companion</div>
-                <div class="feature-item"><span></span> Progress Tracking</div>
-            </div>
-
-            <button class="btn-start" onclick="startApp()">Get Started</button>
         </div>
     </div>
 
     <script>
-       function startApp() {
-    fetch('/api/navigate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step: 'Onboarding' })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data && data.success) {
-            window.location.href = '/';
+        document.addEventListener('DOMContentLoaded', () => {
+            applyStoredThemeAndAccent();
+
+            const toggle = document.getElementById('theme-toggle');
+            const picker = document.getElementById('accent-picker');
+
+            if (toggle) {
+                toggle.addEventListener('click', toggleTheme);
+            }
+
+            if (picker) {
+                picker.addEventListener('input', (event) => {
+                    setAccentColor(event.target.value);
+                });
+            }
+        });
+
+        function applyStoredThemeAndAccent() {
+            const theme = localStorage.getItem('dailymind_theme') || 'light';
+            const accent = localStorage.getItem('dailymind_accent') || '#312f89';
+            setTheme(theme);
+            setAccentColor(accent);
+            const picker = document.getElementById('accent-picker');
+            if (picker) {
+                picker.value = accent;
+            }
         }
-    })
-    .catch(err => console.error("Navigation error:", err));
-}
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('dailymind_theme', theme);
+            const label = document.getElementById('theme-label');
+            if (label) {
+                label.textContent = theme === 'dark' ? 'Dark' : 'Light';
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        }
+
+        function setAccentColor(color) {
+            document.documentElement.style.setProperty('--primary-accent', color);
+            document.documentElement.style.setProperty('--primary-accent-hover', color);
+            localStorage.setItem('dailymind_accent', color);
+        }
+
+        function startApp() {
+            fetch('/api/navigate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ step: 'Onboarding' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success) {
+                    window.location.href = '/';
+                }
+            })
+            .catch(err => console.error('Navigation error:', err));
+        }
     </script>
 </body>
 </html>

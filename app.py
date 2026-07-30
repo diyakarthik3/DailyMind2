@@ -127,26 +127,144 @@ def extract_hobbies_list(raw_hobbies):
     return cleaned_items if cleaned_items else ["your favorite hobby"]
 
 
+def extract_primary_household_task(raw_household):
+    """
+    Returns one cleaned household task string.
+    - If no input is provided, returns an empty string.
+    - If input is provided, strips filler and returns only the core answer.
+    """
+    if raw_household is None:
+        return ""
+
+    if isinstance(raw_household, list):
+        candidates = [str(item).strip() for item in raw_household if str(item).strip()]
+        if not candidates:
+            return ""
+        text = candidates[0]
+    else:
+        text = str(raw_household).strip()
+        if not text:
+            return ""
+
+    text = re.sub(r'^(purposeful\s+household\s+task\s*:?\s*)', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'^(i\s+do|i\s+like|i\s+enjoy|my\s+household\s+task\s+is)\s+', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\s+and\s+', ', ', text, flags=re.IGNORECASE)
+
+    parts = [p.strip() for p in re.split(r'[,;]+', text) if p.strip()]
+    if not parts:
+        return ""
+
+    primary = re.sub(r'^[^\w]+|[^\w]+$', '', parts[0]).strip()
+    return primary.title() if primary else ""
+
+
+def extract_primary_social_activity(raw_social):
+    """Returns one cleaned social activity from questionnaire input."""
+    if raw_social is None:
+        return ""
+
+    if isinstance(raw_social, list):
+        candidates = [str(item).strip() for item in raw_social if str(item).strip()]
+        if not candidates:
+            return ""
+        text = candidates[0]
+    else:
+        text = str(raw_social).strip()
+        if not text:
+            return ""
+
+    text = re.sub(r'^(social\s+connection\s*:?\s*)', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'^(i\s+do|i\s+like|i\s+enjoy|my\s+social\s+activity\s+is)\s+', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\s+and\s+', ', ', text, flags=re.IGNORECASE)
+
+    parts = [p.strip() for p in re.split(r'[,;]+', text) if p.strip()]
+    if not parts:
+        return ""
+
+    primary = re.sub(r'^[^\w]+|[^\w]+$', '', parts[0]).strip()
+    return primary.title() if primary else ""
+
+
+def get_hobby_specific_link(hobby_name):
+    """Return a hobby-relevant external link for Tuesday's hobby session."""
+    hobby = str(hobby_name or "").strip().lower()
+    if not hobby:
+        return "https://livingyourseniorlife.com/hobby-ideas-for-seniors/?utm_source=chatgpt.com"
+
+    hobby_links = {
+        "dance": "https://www.youtube.com/watch?v=ujREEgxEP7g",
+        "dancing": "https://www.youtube.com/watch?v=ujREEgxEP7g",
+        "chess": "https://lichess.org/",
+        "gardening": "https://www.gardenersworld.com/how-to/grow-plants/",
+        "reading": "https://www.gutenberg.org/",
+        "painting": "https://www.youtube.com/watch?v=Q3YzE4YcL3o",
+        "music": "https://www.youtube.com/watch?v=5qap5aO4i9A",
+        "knitting": "https://www.youtube.com/watch?v=p_R1UDsNOMk",
+        "cooking": "https://www.bbcgoodfood.com/recipes/category/healthy",
+        "yoga": "https://www.youtube.com/watch?v=v7AYKMP6rOE",
+        "walking": "https://www.alltrails.com/?utm_source=chatgpt.com"
+    }
+
+    for keyword, link in hobby_links.items():
+        if keyword in hobby:
+            return link
+
+    # Fallback: still hobby-related even for uncommon hobbies.
+    query = hobby.replace(" ", "+")
+    return f"https://www.youtube.com/results?search_query={query}+tutorial"
+
+
 def generate_routine(profile_data, feedback=None):
     # Extract list of individual hobbies
     raw_hobbies = profile_data.get("hobbies", "")
     hobbies = extract_hobbies_list(raw_hobbies)
 
-    hobby_tuesday = hobbies[0] if len(hobbies) > 0 else "your favorite hobby"
-    hobby_thursday = hobbies[1] if len(hobbies) > 1 else hobbies[0]
-    hobby_saturday = hobbies[2] if len(hobbies) > 2 else hobbies[0]
+    has_hobby_input = bool(str(raw_hobbies).strip()) and hobbies and hobbies[0].lower() != "your favorite hobby"
+    hobby_tuesday = hobbies[0] if has_hobby_input else ""
+    hobby_thursday = ""
+    hobby_saturday = ""
+    if has_hobby_input:
+        hobby_thursday = hobbies[1] if len(hobbies) > 1 else hobbies[0]
+        hobby_saturday = hobbies[2] if len(hobbies) > 2 else (hobbies[1] if len(hobbies) > 1 else hobbies[0])
+
+    tuesday_hobby_title = f"Hobby Session: {hobby_tuesday}" if hobby_tuesday else "Hobby Session"
+    tuesday_hobby_desc = (
+        f"Focusing on {hobby_tuesday.lower()} triggers a psychological flow state, boosting natural dopamine."
+        if hobby_tuesday
+        else "Spending time on a hobby supports mood, focus, and emotional balance."
+    )
+    tuesday_hobby_link = get_hobby_specific_link(hobby_tuesday)
+
+    hobby_fallback_link = "https://freedomsquarefl.com/blog/hobby-ideas-for-seniors/"
+    thursday_hobby_title = f"Hobby Session: {hobby_thursday}" if hobby_thursday else "Hobby Session"
+    thursday_hobby_desc = (
+        f"Immersing in {hobby_thursday.lower()} offers deep self-expression and mental relaxation."
+        if hobby_thursday
+        else "Spending time on a hobby supports mood, focus, and emotional balance."
+    )
+    thursday_hobby_link = get_hobby_specific_link(hobby_thursday) if hobby_thursday else hobby_fallback_link
+
+    saturday_hobby_title = f"Hobby Session: {hobby_saturday}" if hobby_saturday else "Hobby Session"
+    saturday_hobby_desc = (
+        f"Spending unhurried time on {hobby_saturday.lower()} satisfies creative expression."
+        if hobby_saturday
+        else "Spending time on a hobby supports mood, focus, and emotional balance."
+    )
+    saturday_hobby_link = get_hobby_specific_link(hobby_saturday) if hobby_saturday else hobby_fallback_link
 
     physical = profile_data.get("physical_activities", ["Outdoor Walking"])
     primary_move = physical[0] if physical else "Gentle Walking"
 
-    social = profile_data.get("social_pref", ["Calling Family"])
-    primary_social = social[0] if social else "Call a loved one"
+    social = profile_data.get("social_pref", [])
+    primary_social = extract_primary_social_activity(social)
+    wednesday_social_title = f"Social Connection: {primary_social}" if primary_social else "Social Connection"
+    wednesday_social_link = "https://connect2affect.org/easy-conversation-starters/?utm_source=chatgpt.com"
 
     cognitive = profile_data.get("brain_activities", ["Word & Memory Puzzles"])
     primary_cog = cognitive[0] if cognitive else "Memory Exercise"
 
-    household = profile_data.get("household_tasks", ["Watering Plants"])
-    primary_task = household[0] if household else "Light Household Task"
+    household = profile_data.get("household_tasks", [])
+    primary_task = extract_primary_household_task(household)
 
     # Adjust activity titles based on reflection feedback
     if feedback:
@@ -162,27 +280,27 @@ def generate_routine(profile_data, feedback=None):
             "bg_color": "rgba(255, 255, 255, 0.45)",
             "tasks": [
                 {
-                    "name": "Morning Grounding & Sensory Check-In",
+                    "name": "Morning Grounding",
                     "desc": "Connecting with physical senses lowers baseline cortisol levels and restores balance.",
                     "link": "https://www.youtube.com/watch?v=inpok4MKVLM",
                     "completed": False
                 },
                 {
-                    "name": f"Physical Focus: {primary_move}",
-                    "desc": f"Engaging in {primary_move.lower()} stimulates blood circulation to the brain, enhancing mood.",
-                    "link": "https://www.healthline.com/nutrition/7-health-benefits-of-water",
+                    "name": f"{primary_move}",
+                    "link": "https://psychology.com/tools/positive-affirmations?utm_source=chatgpt.com",
+                    "link": "https://www.alltrails.com/?utm_source=chatgpt.com",
                     "completed": False
                 },
                 {
-                    "name": f"Brain & Memory Exercise: {primary_cog}",
+                    "name": "Brain and Memory Exercise",
                     "desc": "Cognitive stimulation strengthens neural pathways, aiding memory retention.",
-                    "link": "https://www.medicalnewstoday.com/articles/324417",
+                    "link": "https://seniorbraingames.org/play/memory-games/memory-card-match",
                     "completed": False
                 },
                 {
-                    "name": "Evening Body Scan Relaxation",
+                    "name": "Body Scan Relaxation",
                     "desc": "Progressive body relaxation reduces physical tension accumulated over the day.",
-                    "link": "https://www.mindful.org/a-body-scan-meditation-to-help-you-sleep/",
+                    "link": "https://www.youtube.com/watch?v=8v8Gl4wDWkc",
                     "completed": False
                 }
             ]
@@ -193,27 +311,27 @@ def generate_routine(profile_data, feedback=None):
             "bg_color": "rgba(255, 255, 255, 0.45)",
             "tasks": [
                 {
-                    "name": "Morning Thought Reframing & Journaling",
+                    "name": "Thought Journaling",
                     "desc": "Expressing worry on paper allows you to process emotions logically and self-compassionately.",
-                    "link": "https://www.psychologytoday.com/us/blog/shyness-is-not-loneliness/202105/how-journaling-eases-anxiety",
+                    "link": "https://psychology.com/tools/journal-prompts?utm_source=chatgpt.com#tool",
                     "completed": False
                 },
                 {
-                    "name": f"Purpose & Flow Session: {hobby_tuesday}",
-                    "desc": f"Focusing on {hobby_tuesday.lower()} triggers a psychological flow state, boosting natural dopamine.",
-                    "link": "https://www.healthyplace.com/blogs/buildingselfesteem/2015/10/the-mental-health-benefits-of-having-a-hobby",
+                    "name": tuesday_hobby_title,
+                    "desc": tuesday_hobby_desc,
+                    "link": tuesday_hobby_link,
                     "completed": False
                 },
                 {
-                    "name": f"Purposeful Household Task: {primary_task}",
+                    "name": f"Household Task {primary_task}",
                     "desc": "Completing a manageable task restores a sense of order and personal achievement.",
                     "link": "https://www.healthline.com/health/cognitive-distortions",
                     "completed": False
                 },
                 {
-                    "name": "Evening Compassionate Self-Affirmation",
+                    "name": "Evening Self-Affirmation",
                     "desc": "Reaffirming your daily efforts fosters resilience and improves emotional self-worth.",
-                    "link": "https://www.mindful.org/",
+                    "link": "https://psychology.com/tools/positive-affirmations?utm_source=chatgpt.com",
                     "completed": False
                 }
             ]
@@ -224,27 +342,31 @@ def generate_routine(profile_data, feedback=None):
             "bg_color": "rgba(255, 255, 255, 0.45)",
             "tasks": [
                 {
-                    "name": "15-Minute Outdoor Light Refresh Walk",
+                    "name": "Outdoor Refresh Walk",
                     "desc": "Natural light exposure boosts serotonin production, regulating biological rhythms.",
                     "link": "https://www.youtube.com/watch?v=WPPPFqsECz0",
                     "completed": False
                 },
                 {
-                    "name": "Medication & Hydration Consistency Check",
-                    "desc": "Routine health adherence stabilizes baseline physiological safety and overall energy.",
-                    "link": "https://www.healthline.com/",
+                    "name": "Podcast Break",
+                    "desc": "Meaningful audio content stimulates the mind, encourages curiosity, and supports emotional well-being.",
+                    "link": "https://open.spotify.com/genre/0JQ5DArNBzkmxXHCqFLx2J?utm_source=chatgpt.com",
                     "completed": False
                 },
                 {
-                    "name": f"Social Connection: {primary_social}",
-                    "desc": f"Reaching out through {primary_social.lower()} combats feelings of isolation.",
-                    "link": "https://www.psychologytoday.com/us/blog/the-social-self/202108/why-connecting-others-is-good-our-health",
+                    "name": wednesday_social_title,
+                    "desc": (
+                        f"Reaching out through {primary_social.lower()} combats feelings of isolation."
+                        if primary_social
+                        else "Connecting with others supports mood, confidence, and emotional well-being."
+                    ),
+                    "link": wednesday_social_link,
                     "completed": False
                 },
                 {
-                    "name": "Evening Herbal Tea & Gentle Wind-Down",
-                    "desc": "Warm, caffeine-free herbal tea relaxes gastrointestinal muscles and calms the nervous system.",
-                    "link": "https://www.sleepfoundation.org/nutrition/tea-for-sleep",
+                    "name": "Sleep Breathing Exercise",
+                    "desc": "Guided sleep breathing exercises relax the nervous system and prepare the body for restful sleep.",
+                    "link": "https://www.youtube.com/watch?v=nqOm1HZyh8Y",
                     "completed": False
                 }
             ]
@@ -255,9 +377,9 @@ def generate_routine(profile_data, feedback=None):
             "bg_color": "rgba(255, 255, 255, 0.45)",
             "tasks": [
                 {
-                    "name": "'Three Good Things' Gratitude Reflection",
+                    "name": "Gratitude Reflection",
                     "desc": "Intentionally recognizing positive details rewires brain pathways toward optimism.",
-                    "link": "https://www.gratitude.plus/",
+                    "link": "https://ggia.berkeley.edu/practice/three-good-things?utm_source=chatgpt.com",
                     "completed": False
                 },
                 {
@@ -267,15 +389,15 @@ def generate_routine(profile_data, feedback=None):
                     "completed": False
                 },
                 {
-                    "name": f"Creative Hobby Deep-Dive: {hobby_thursday}",
-                    "desc": f"Immersing in {hobby_thursday.lower()} offers deep self-expression and mental relaxation.",
-                    "link": "https://www.healthyplace.com/",
+                    "name": thursday_hobby_title,
+                    "desc": thursday_hobby_desc,
+                    "link": thursday_hobby_link,
                     "completed": False
                 },
                 {
-                    "name": "Evening Loving-Kindness Meditation",
+                    "name": "Guided Meditation",
                     "desc": "Directing compassionate thoughts toward yourself and others calms anxiety.",
-                    "link": "https://www.mindful.org/a-loving-kindness-meditation-to-boost-compassion/",
+                    "link": "https://www.youtube.com/watch?v=Lzvj_JVZkzY",
                     "completed": False
                 }
             ]
@@ -292,7 +414,7 @@ def generate_routine(profile_data, feedback=None):
                     "completed": False
                 },
                 {
-                    "name": "Non-Judgmental Emotional Check-In",
+                    "name": "Emotional Check-In",
                     "desc": "Accepting feelings without self-criticism prevents mental suppression and burnout.",
                     "link": "https://www.mindful.org/",
                     "completed": False
@@ -317,19 +439,19 @@ def generate_routine(profile_data, feedback=None):
             "bg_color": "rgba(255, 255, 255, 0.45)",
             "tasks": [
                 {
-                    "name": f"Extended Hobby Session: {hobby_saturday}",
-                    "desc": f"Spending unhurried time on {hobby_saturday.lower()} satisfies creative expression.",
-                    "link": "https://www.healthyplace.com/",
+                    "name": saturday_hobby_title,
+                    "desc": saturday_hobby_desc,
+                    "link": saturday_hobby_link,
                     "completed": False
                 },
                 {
-                    "name": "Digital Detox & Screen-Free Rest Hour",
+                    "name": "Learn Something New",
                     "desc": "Stepping away from screens calms overstimulated neural pathways.",
-                    "link": "https://www.healthline.com/",
+                    "link": "https://ed.ted.com/lessons?utm_source=chatgpt.com",
                     "completed": False
                 },
                 {
-                    "name": "Warm Relaxation & Gentle Stretch",
+                    "name": "Gentle Stretch",
                     "desc": "Warmth relaxes stiff joints and improves blood circulation.",
                     "link": "https://www.healthline.com/",
                     "completed": False
@@ -348,13 +470,13 @@ def generate_routine(profile_data, feedback=None):
             "bg_color": "rgba(255, 255, 255, 0.45)",
             "tasks": [
                 {
-                    "name": "Gentle Morning & Slow Movement",
+                    "name": "Morning Slow Movement",
                     "desc": "Starting the day unhurried keeps morning stress hormones low.",
-                    "link": "https://www.youtube.com/watch?v=inpok4MKVLM",
+                    "link": "https://www.youtube.com/watch?v=JwqUw3rQI34",
                     "completed": False
                 },
                 {
-                    "name": "Low-Pressure Planning for Next Week",
+                    "name": "Low-Pressure Planning",
                     "desc": "Structuring simple goals eliminates anticipatory anxiety for the upcoming week.",
                     "link": "https://www.mindful.org/",
                     "completed": False
@@ -362,11 +484,11 @@ def generate_routine(profile_data, feedback=None):
                 {
                     "name": f"Brain Stimulation: {primary_cog}",
                     "desc": f"Engaging in {primary_cog.lower()} keeps cognitive focus active and rewarding.",
-                    "link": "https://www.healthline.com/",
+                    "link": "https://seniorbraingames.org/play/word-games/word-scramble",
                     "completed": False
                 },
                 {
-                    "name": "Bedtime Sleep Environment Prep",
+                    "name": "Bedtime Sleep Prep",
                     "desc": "A dark, quiet, and comfortable environment fosters restorative sleep quality.",
                     "link": "https://www.youtube.com/watch?v=aEqlQv71mI0",
                     "completed": False
@@ -596,6 +718,18 @@ def serve_image(filename):
 
 if __name__ == '__main__':
     print(f"Starting DailyMind server on http://127.0.0.1:{PORT}")
-    if not os.environ.get("RENDER") and os.environ.get("DISABLE_BROWSER_OPEN") != "1":
-        Timer(1.2, open_browser).start()
-    app.run(host='0.0.0.0', port=PORT, debug=os.environ.get("FLASK_DEBUG") == "1")
+
+    # Default to hot-reload locally unless explicitly disabled.
+    debug_setting = os.environ.get("FLASK_DEBUG")
+    if debug_setting is None:
+        debug_mode = not bool(os.environ.get("RENDER"))
+    else:
+        debug_mode = debug_setting == "1"
+
+    app.run(
+        host='0.0.0.0',
+        port=PORT,
+        debug=debug_mode,
+        load_dotenv=False,
+        use_reloader=False
+    )
